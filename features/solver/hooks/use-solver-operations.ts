@@ -220,8 +220,12 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
         await onAfterOperation?.();
     };
 
-    async function executeFetch(opts: SolverExecOptions): Promise<SolverOperationResult> {
-        startExecution(60_000);
+    const finishExecutionImmediate = () => {
+        setIsExecuting(false);
+    };
+
+    async function executeFetch(opts: SolverExecOptions, skipFinish: boolean = false): Promise<SolverOperationResult> {
+        if (!skipFinish) startExecution(60_000);
         try {
             const result = await solverFetch(opts.caseId, opts.monthYear, {
                 unit: opts.caseId,
@@ -239,12 +243,14 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
             toast.error('Fehler beim Abrufen der Daten', { description: result.data.job.error ?? result.data.job.consoleOutput });
             return { succeeded: false };
         } finally {
-            await finishExecution();
+            if (!skipFinish) await finishExecution();
         }
     }
 
-    async function executeSolve(opts: SolverExecOptions, timeout: number): Promise<SolverOperationResult> {
-        startExecution(timeout * 1_000 + 10_000, timeout);
+    async function executeSolve(opts: SolverExecOptions, timeout: number, skipFinish: boolean = false): Promise<SolverOperationResult> {
+        if (!skipFinish) {
+            startExecution(timeout * 1_000 + 10_000, timeout);
+        }
         try {
             const result = await solverSolve(opts.caseId, opts.monthYear, {
                 unit: opts.caseId,
@@ -257,27 +263,33 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
                 return { succeeded: false };
             }
             if (result.data.job.status === 'completed') {
-                toast.success('Dienstplan erfolgreich erstellt');
+                if (!skipFinish) {
+                    toast.success('Dienstplan erfolgreich erstellt');
+                }
                 setPendingInsertSolution(result.data.solution);
-                setImportDialogParams({
-                    caseId: opts.caseId,
-                    start: opts.start,
-                    end: opts.end,
-                    solutionType: 'wdefault',
-                    solution: result.data.solution,
-                });
-                setShowImportDialog(true);
+                if (!skipFinish) {
+                    setImportDialogParams({
+                        caseId: opts.caseId,
+                        start: opts.start,
+                        end: opts.end,
+                        solutionType: 'wdefault',
+                        solution: result.data.solution,
+                    });
+                    setShowImportDialog(true);
+                }
                 return { succeeded: true };
             }
             toast.error('Fehler beim Erstellen des Dienstplans', { description: result.data.job.error ?? result.data.job.consoleOutput });
             return { succeeded: false };
         } finally {
-            await finishExecution();
+            if (!skipFinish) {
+                await finishExecution();
+            }
         }
     }
 
-    async function executeSolveMultiple(opts: SolverExecOptions, timeout: number): Promise<SolverOperationResult> {
-        startExecution(timeout * 3 * 1_000 + 20_000, timeout);
+    async function executeSolveMultiple(opts: SolverExecOptions, timeout: number, skipFinish: boolean = false): Promise<SolverOperationResult> {
+        if (!skipFinish) startExecution(timeout * 3 * 1_000 + 20_000, timeout);
         try {
             const result = await solverSolveMultiple(opts.caseId, opts.monthYear, {
                 unit: opts.caseId,
@@ -321,12 +333,12 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
             toast.error('Fehler beim Erstellen mehrerer Dienstpläne', { description: result.data.job.error ?? result.data.job.consoleOutput });
             return { succeeded: false };
         } finally {
-            await finishExecution();
+            if (!skipFinish) await finishExecution();
         }
     }
 
-    async function executeInsert(opts: SolverExecOptions): Promise<SolverOperationResult> {
-        startExecution(60_000);
+    async function executeInsert(opts: SolverExecOptions, skipFinish: boolean = false): Promise<SolverOperationResult> {
+        if (!skipFinish) startExecution(60_000);
         try {
             const result = await solverInsert(opts.caseId, opts.monthYear, {
                 unit: opts.caseId,
@@ -345,12 +357,12 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
             toast.error('Fehler beim Einfügen der Daten', { description: result.data.job.error ?? result.data.job.consoleOutput });
             return { succeeded: false };
         } finally {
-            await finishExecution();
+            if (!skipFinish) await finishExecution();
         }
     }
 
-    async function executeDelete(opts: SolverExecOptions): Promise<SolverOperationResult> {
-        startExecution(60_000);
+    async function executeDelete(opts: SolverExecOptions, skipFinish: boolean = false): Promise<SolverOperationResult> {
+        if (!skipFinish) startExecution(60_000);
         try {
             const result = await solverDelete(opts.caseId, opts.monthYear, {
                 unit: opts.caseId,
@@ -369,7 +381,7 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
             toast.error('Fehler beim Löschen der Daten', { description: result.data.job.error ?? result.data.job.consoleOutput });
             return { succeeded: false };
         } finally {
-            await finishExecution();
+            if (!skipFinish) await finishExecution();
         }
     }
 

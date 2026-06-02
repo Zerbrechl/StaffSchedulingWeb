@@ -28,6 +28,7 @@ import {ImportMultipleSolutionsDialog} from '@/components/import-multiple-soluti
 
 interface SolverControlPanelProps {
     caseId: number;
+    selectedCaseIds?: number[];
     monthYear: string;
     onAfterOperation?: () => Promise<void>;
     initialLastInsertedSolution?: import('@/src/entities/models/schedule.model').ScheduleSolutionRaw | null;
@@ -35,12 +36,13 @@ interface SolverControlPanelProps {
     isLocked?: boolean;
 }
 
-export function SolverControlPanel({caseId, monthYear, onAfterOperation, initialLastInsertedSolution, initialPendingInsertSolution, isLocked}: SolverControlPanelProps) {
+export function SolverControlPanel({caseId, selectedCaseIds = [], monthYear, onAfterOperation, initialLastInsertedSolution, initialPendingInsertSolution, isLocked}: SolverControlPanelProps) {
     const searchParams = useSearchParams();
     const pathname = usePathname();
     const router = useRouter();
     const [command, setCommand] = useState<SolverCommandType>('solve');
     const [solveTimeout, setSolveTimeout] = useState('300');
+    const [enableSharedPool, setEnableSharedPool] = useState(false);
 
     const [showDeleteMissingDialog, setShowDeleteMissingDialog] = useState(false);
     const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
@@ -98,67 +100,114 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, initial
         lastInsertedSolution,
     } = useSolverOperations({onAfterOperation, initialLastInsertedSolution: initialLastInsertedSolution ?? null, initialPendingInsertSolution: initialPendingInsertSolution ?? null});
 
-    const handleExecute = async () => {
-        if (!caseId) return;
+    const buildExecutionOptions = (targetCaseId: number) => {
+        if (selectedMonth === null || selectedYear === null) {
+            return null;
+        }
 
-        if (selectedMonth === null || selectedYear === null) return;
-
-        // Calculate first and last day of selected month
-        const firstDay = new Date(selectedYear!, selectedMonth! - 1, 1);
-        const lastDay = new Date(selectedYear!, selectedMonth!, 0);
+        const firstDay = new Date(selectedYear, selectedMonth - 1, 1);
+        const lastDay = new Date(selectedYear, selectedMonth, 0);
 
         const start =
             firstDay.getFullYear() + '-' +
             String(firstDay.getMonth() + 1).padStart(2, '0') + '-' +
             String(firstDay.getDate()).padStart(2, '0');
+
         const end =
             lastDay.getFullYear() + '-' +
             String(lastDay.getMonth() + 1).padStart(2, '0') + '-' +
             String(lastDay.getDate()).padStart(2, '0');
 
-        const execOpts = {caseId, monthYear, start, end};
+        return {
+            caseId: targetCaseId,
+            monthYear,
+            start,
+            end,
+        };
+    };
 
-        switch (command) {
-            case 'fetch': {
-                const result = await executeFetch(execOpts);
-                if (result.succeeded && selectedMonth !== null && selectedYear !== null) {
-                    const monthStr = String(selectedMonth).padStart(2, '0');
-                    const newMonthYear = `${monthStr}_${selectedYear}`;
-                    const params = new URLSearchParams(searchParams.toString());
-                    params.set('caseId', String(caseId));
-                    params.set('monthYear', newMonthYear);
-                    router.push(`${pathname}?${params.toString()}`);
+    const handleExecute = async () => {
+        if (!caseId) return;
+
+        if (selectedMonth === null || selectedYear === null) return;
+        const targetCaseIds =
+            selectedCaseIds.length > 0
+                ? selectedCaseIds
+                : [caseId];
+        /**
+         * Shared pool mode placeholder.
+         */
+        if (command === 'solve' && enableSharedPool) {
+            console.log('Shared pool solving is not implemented yet.', {
+                caseIds: targetCaseIds,
+                monthYear,
+            });
+
+            return;
+        }
+
+        /**
+         * Apply action to all selected cases one by one.
+         */
+        let lastSuccessfulCaseId = caseId;
+        const isMultipleExecution = targetCaseIds.length > 1;
+        
+        for (let i = 0; i < targetCaseIds.length; i++) {
+            const targetCaseId = targetCaseIds[i];
+            const isLastCase = i === targetCaseIds.length - 1;
+            const skipFinish = isMultipleExecution && !isLastCase;
+            
+            const execOpts = buildExecutionOptions(targetCaseId);
+
+            if (!execOpts) return;
+
+            switch (command) {
+                case 'fetch': {
+                    const result = await executeFetch(execOpts, skipFinish);
+                    if (result.succeeded) {
+                        lastSuccessfulCaseId = targetCaseId;
+                    }
+                    break;
                 }
-                break;
-            }
-            case 'solve':
-                await executeSolve(execOpts, parseInt(solveTimeout, 10));
-                break;
-            case 'solve-multiple':
-                await executeSolveMultiple(execOpts, parseInt(solveTimeout, 10));
-                break;
-            case 'insert':
-                if (!pendingInsertSolution) {
-                    setQueuedCmd('insert');
-                    setQueuedOpts(execOpts);
-                    setShowInsertMissingDialog(true);
-                    return;
-                }
-                await executeInsert(execOpts);
-                break;
-            case 'delete': {
-                if (!lastInsertedSolution) {
+                case 'solve':
+                    await executeSolve(execOpts, parseInt(solveTimeout, 10), skipFinish);
+                    break;
+                case 'solve-multiple':
+                    await executeSolveMultiple(execOpts, parseInt(solveTimeout, 10), skipFinish);
+                    break;
+                case 'insert':
+                    if (!pendingInsertSolution) {
+                        setQueuedCmd('insert');
+                        setQueuedOpts(execOpts);
+                        setShowInsertMissingDialog(true);
+                        return;
+                    }
+                    await executeInsert(execOpts, skipFinish);
+                    break;
+                case 'delete': {
+                    if (!lastInsertedSolution) {
+                        setQueuedCmd('delete');
+                        setQueuedOpts(execOpts);
+                        setShowDeleteMissingDialog(true);
+                        return;
+                    }
+                    // ask for final confirmation too
                     setQueuedCmd('delete');
                     setQueuedOpts(execOpts);
-                    setShowDeleteMissingDialog(true);
+                    setShowDeleteConfirmDialog(true);
                     return;
                 }
-                // ask for final confirmation too
-                setQueuedCmd('delete');
-                setQueuedOpts(execOpts);
-                setShowDeleteConfirmDialog(true);
-                return;
             }
+        }
+
+        // After all cases are processed, navigate to the last successful case
+        if (command === 'fetch' && selectedMonth !== null && selectedYear !== null) {
+            const monthStr = String(selectedMonth).padStart(2, '0');
+            const newMonthYear = `${monthStr}_${selectedYear}`;
+            const params = new URLSearchParams(searchParams.toString());
+            params.set('caseId', String(lastSuccessfulCaseId));
+            params.set('monthYear', newMonthYear);
+            router.push(`${pathname}?${params.toString()}`);
         }
     };
 
@@ -189,9 +238,11 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, initial
             <CardHeader>
                 <CardTitle>Solver steuern</CardTitle>
                 <CardDescription>
-                    {caseId
-                        ? `Ausgewählter Fall: ${caseId}`
-                        : 'Bitte wählen Sie einen Fall aus'}
+                    {selectedCaseIds.length > 0
+                        ? `Ausgewählte Fälle: ${selectedCaseIds.join(', ')}`
+                        : caseId
+                            ? `Ausgewählter Fall: ${caseId}`
+                            : 'Bitte wählen Sie einen Fall aus'}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -305,6 +356,38 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, initial
 
 
                 {/* Command-specific parameters */}
+                {command === 'solve' && (
+                    <div className="flex items-center justify-between rounded-md border p-3">
+                        <div className="space-y-0.5">
+                            <Label htmlFor="shared-pool">
+                                Enable Shared Pool
+                            </Label>
+
+                            <p className="text-sm text-muted-foreground">
+                                Off: solve selected cases one by one. On: reserved for shared-pool implementation.
+                            </p>
+                        </div>
+
+                        <button
+                            id="shared-pool"
+                            type="button"
+                            disabled={isExecuting || isLocked}
+                            onClick={() => setEnableSharedPool(prev => !prev)}
+                            className={`
+                relative inline-flex h-6 w-11 items-center rounded-full transition
+                ${enableSharedPool ? 'bg-primary' : 'bg-muted'}
+                ${isExecuting || isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+            `}
+                        >
+            <span
+                className={`
+                    inline-block h-5 w-5 transform rounded-full bg-background shadow transition
+                    ${enableSharedPool ? 'translate-x-5' : 'translate-x-1'}
+                `}
+            />
+                        </button>
+                    </div>
+                )}
                 {(command === 'solve' || command === 'solve-multiple') && (
                     <div className="space-y-2">
                         <Label htmlFor="timeout">Timeout (Sekunden)</Label>
