@@ -306,6 +306,7 @@ export function SolverControlPanel({caseId, selectedCaseIds = [], monthYear, onA
                 </div>
 
                 {/* Month and Year Selection */}
+                {/*
                 <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="month">Monat</Label>
@@ -354,7 +355,7 @@ export function SolverControlPanel({caseId, selectedCaseIds = [], monthYear, onA
                         </div>
                     </div>
 
-
+                */}
                 {/* Command-specific parameters */}
                 {command === 'solve' && (
                     <div className="flex items-center justify-between rounded-md border p-3">
