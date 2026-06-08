@@ -11,7 +11,12 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { FetchCaseDialog } from '@/features/cases/components/fetch-case-dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { ChevronDown, Plus } from 'lucide-react';
 import { parseMonthYear } from '@/lib/utils/case-utils';
 import { CaseUnit } from '@/src/entities/models/case.model';
@@ -139,7 +144,7 @@ export function MonthSelector({ disabled, lockedCaseId, lockedMonthYear }: Month
     return (
         <div className="flex items-center gap-3 w-full max-w-[380px]">
             <div className="flex items-center gap-2 min-w-0">
-                <span className="text-sm text-muted-foreground">Month:</span>
+                <span className="text-sm text-muted-foreground">Monat:</span>
 
                 <Select
                     value={effectiveMonthYear}
@@ -164,57 +169,35 @@ export function MonthSelector({ disabled, lockedCaseId, lockedMonthYear }: Month
             </div>
 
             {effectiveMonthYear && (
-                <div className="relative shrink-0">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-8 w-[128px] justify-between px-2 text-sm"
-                        onClick={() => setIsCasesOpen(open => !open)}
-                        disabled={disabled || isLoading}
-                    >
-                        <span>Cases ({casesForSelectedMonth.length})</span>
-                        <ChevronDown
-                            className={`h-4 w-4 transition-transform ${isCasesOpen ? 'rotate-180' : ''}`}
-                        />
-                    </Button>
+                <DropdownMenu open={isCasesOpen} onOpenChange={setIsCasesOpen}>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            className="h-8 w-[128px] justify-between px-2 text-sm"
+                            disabled={disabled || isLoading}
+                        >
+                            <span>Cases ({casesForSelectedMonth.length})</span>
+                            <ChevronDown
+                                className={`h-4 w-4 transition-transform ${isCasesOpen ? 'rotate-180' : ''}`}
+                            />
+                        </Button>
+                    </DropdownMenuTrigger>
 
-                    {isCasesOpen && (
-                        <div className="absolute left-0 top-full z-50 mt-1 w-full">
-                            <ScrollArea className="h-40 rounded-md border bg-background shadow-lg">
-                                <div className="flex flex-col gap-1 p-2">
-                                    {casesForSelectedMonth.map(unit => {
-                                        const selected = selectedCaseIds.includes(unit.unitId);
-
-                                        return (
-                                            <button
-                                                key={unit.unitId}
-                                                type="button"
-                                                disabled={disabled || isLoading}
-                                                onClick={() => toggleCaseId(unit.unitId)}
-                                                className={`
-                                                    flex items-center gap-2 rounded px-2 py-1 text-left text-sm
-                                                    hover:bg-muted transition
-                                                    ${selected ? 'bg-muted font-medium' : ''}
-                                                `}
-                                            >
-                                                <div
-                                                    className={`
-                                                        w-4 h-4 shrink-0 border rounded flex items-center justify-center text-xs
-                                                        ${selected ? 'bg-primary text-primary-foreground border-primary' : ''}
-                                                    `}
-                                                >
-                                                    {selected ? '✓' : ''}
-                                                </div>
-
-                                                <span className="truncate">Case {unit.unitId}</span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </ScrollArea>
-                        </div>
-                    )}
-                </div>
+                    <DropdownMenuContent align="start" className="w-[128px] max-h-40 overflow-y-auto">
+                        {casesForSelectedMonth.map(unit => (
+                            <DropdownMenuCheckboxItem
+                                key={unit.unitId}
+                                checked={selectedCaseIds.includes(unit.unitId)}
+                                disabled={disabled || isLoading}
+                                onSelect={event => event.preventDefault()}
+                                onCheckedChange={() => toggleCaseId(unit.unitId)}
+                            >
+                                Case {unit.unitId}
+                            </DropdownMenuCheckboxItem>
+                        ))}
+                    </DropdownMenuContent>
+                </DropdownMenu>
             )}
 
             <div className="shrink-0">
