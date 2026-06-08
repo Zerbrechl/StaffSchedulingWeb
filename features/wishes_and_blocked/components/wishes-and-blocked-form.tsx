@@ -206,8 +206,8 @@ export function WishesAndBlockedForm({
 
     // Categories for shifts
     const eventCategories = [
-        {id: 'wish-shift', name: 'Wunsch-Schicht', color: '#a7f3d0'},
-        {id: 'blocked-shift', name: 'Blockierte Schicht', color: '#fca5a5'},
+        {id: 'wish-shift', name: 'Wunsch-Schicht', color: '#ef4444'},
+        {id: 'blocked-shift', name: 'Blockierte Schicht', color: '#000000'},
     ];
 
     const handleFormSubmit = () => {

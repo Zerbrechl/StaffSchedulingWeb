@@ -171,6 +171,20 @@ export function InteractiveCalendar({
         return eventCategories.find((c) => c.id === categoryId)?.name;
     };
 
+    const getTextColorForBackground = (backgroundColor?: string) => {
+        if (!backgroundColor?.startsWith("#")) return undefined;
+
+        const hex = backgroundColor.slice(1);
+        if (hex.length !== 6) return undefined;
+
+        const red = parseInt(hex.slice(0, 2), 16);
+        const green = parseInt(hex.slice(2, 4), 16);
+        const blue = parseInt(hex.slice(4, 6), 16);
+        const luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
+
+        return luminance > 0.55 ? "#111827" : "#ffffff";
+    };
+
     // Render calendar data.
     const daysInMonth = getDaysInMonth(month, year);
     const firstDay = getFirstDayOfMonth(month, year);
@@ -283,6 +297,7 @@ export function InteractiveCalendar({
                                                             style={{
                                                                 backgroundColor: eventCat.color,
                                                                 borderColor: eventCat.color,
+                                                                color: getTextColorForBackground(eventCat.color),
                                                             }}
                                                         >
                                                             {uniqueTitles.join(', ')}
@@ -388,7 +403,10 @@ export function InteractiveCalendar({
                                                             <div key={eventCat.id} className="space-y-1.5">
                               <span
                                   className="text-xs font-medium px-2 py-0.5 rounded-full"
-                                  style={{backgroundColor: eventCat.color}}
+                                  style={{
+                                      backgroundColor: eventCat.color,
+                                      color: getTextColorForBackground(eventCat.color),
+                                  }}
                               >
                                 {eventCat.name}
                               </span>
@@ -425,7 +443,8 @@ export function InteractiveCalendar({
                                                                                     active
                                                                                         ? {
                                                                                             backgroundColor: eventCat.color,
-                                                                                            borderColor: eventCat.color
+                                                                                            borderColor: eventCat.color,
+                                                                                            color: getTextColorForBackground(eventCat.color),
                                                                                         }
                                                                                         : {
                                                                                             borderColor: eventCat.color,
@@ -492,7 +511,10 @@ export function InteractiveCalendar({
                                                                         style={{
                                                                             backgroundColor: event.categoryId
                                                                                 ? eventCategories.find((c) => c.id === event.categoryId)?.color
-                                                                                : "rgb(243, 244, 246)"
+                                                                                : "rgb(243, 244, 246)",
+                                                                            color: event.categoryId
+                                                                                ? getTextColorForBackground(eventCategories.find((c) => c.id === event.categoryId)?.color)
+                                                                                : undefined,
                                                                         }}
                                                                     >
                                                                         <div className="flex flex-col gap-1">
@@ -537,7 +559,10 @@ export function InteractiveCalendar({
                                                                     style={{
                                                                         backgroundColor: event.categoryId
                                                                             ? eventCategories.find((c) => c.id === event.categoryId)?.color
-                                                                            : "rgb(243, 244, 246)"
+                                                                            : "rgb(243, 244, 246)",
+                                                                        color: event.categoryId
+                                                                            ? getTextColorForBackground(eventCategories.find((c) => c.id === event.categoryId)?.color)
+                                                                            : undefined,
                                                                     }}
                                                                 >
                                                                     <div className="flex flex-col gap-1">
