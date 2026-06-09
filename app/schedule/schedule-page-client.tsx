@@ -23,6 +23,7 @@ import {SchedulesMetadata, ScheduleSolution, ScheduleSolutionRaw} from '@/src/en
 import {parseSolutionFile} from '@/lib/services/schedule-parser';
 import {toast} from 'sonner';
 import {Root as Switch, Thumb as SwitchThumb} from '@radix-ui/react-switch';
+import {useRouter} from 'next/navigation';
 
 interface SchedulePageClientProps {
     caseId: number;
@@ -32,6 +33,7 @@ interface SchedulePageClientProps {
 }
 
 export function SchedulePageClient({caseId, monthYear, initialSchedule, initialMetadata}: SchedulePageClientProps) {
+    const router = useRouter();
     const schedule = initialSchedule;
     const schedulesMetadata = initialMetadata;
 
@@ -108,8 +110,9 @@ export function SchedulePageClient({caseId, monthYear, initialSchedule, initialM
     const handleScheduleDelete = async (scheduleId: string) => {
         const result = await deleteScheduleAction(caseId, monthYear, scheduleId);
         if (!result.success) {
-            toast.error(result.error || 'Fehler beim Löschen des Dienstplans');
+            throw new Error(result.error || 'Fehler beim Löschen des Dienstplans');
         }
+        router.refresh();
     };
 
     const handleDescriptionUpdate = async (scheduleId: string, description: string) => {
@@ -316,6 +319,20 @@ export function SchedulePageClient({caseId, monthYear, initialSchedule, initialM
                     {/* Legend */}
                     <ScheduleLegend/>
                 </>
+            ) : compareMode ? (
+                <Card className="border-border/50 p-12">
+                    <div className="flex flex-col items-center justify-center text-center space-y-4">
+                        <div className="rounded-full bg-muted p-6">
+                            <CalendarDays className="h-12 w-12 text-muted-foreground"/>
+                        </div>
+                        <div className="space-y-2">
+                            <h3 className="text-xl font-semibold text-foreground">Keine Dienstpläne ausgewählt</h3>
+                            <p className="text-muted-foreground max-w-md">
+                                Wähle in Vergleich verwalten mindestens einen hochgeladenen Dienstplan aus.
+                            </p>
+                        </div>
+                    </div>
+                </Card>
             ) : (
                 <Card className="border-border/50 p-12">
                     <div className="flex flex-col items-center justify-center text-center space-y-4">

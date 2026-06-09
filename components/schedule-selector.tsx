@@ -41,7 +41,6 @@ export function ScheduleSelector({
                                      onDescriptionUpdate,
                                  }: ScheduleSelectorProps) {
     const [isLoading, setIsLoading] = useState(false);
-    const [localSelectedIds, setLocalSelectedIds] = useState<string[]>(selectedScheduleIds);
     const [editingDescriptionId, setEditingDescriptionId] = useState<string | null>(null);
     const [editingDescription, setEditingDescription] = useState<string>("");
 
@@ -70,7 +69,7 @@ export function ScheduleSelector({
             toast.success("Dienstplan gelöscht");
             if (onRefresh) await onRefresh();
         } catch (error) {
-            toast.error("Fehler beim Löschen des Dienstplans");
+            toast.error(error instanceof Error ? error.message : "Fehler beim Löschen des Dienstplans");
             console.error(error);
         } finally {
             setIsLoading(false);
@@ -115,6 +114,11 @@ export function ScheduleSelector({
         });
     };
 
+    const getScheduleLabel = (description?: string) => {
+        if (!description) return "Ohne Beschreibung";
+        return description.length > 30 ? `${description.slice(0, 30)}...` : description;
+    };
+
     if (schedulesMetadata.schedules.length === 0) {
         return (
             <Card>
@@ -135,10 +139,9 @@ export function ScheduleSelector({
 
     const handleCheckboxChange = (scheduleId: string, checked: boolean) => {
         const newSelection = checked
-            ? [...localSelectedIds, scheduleId]
-            : localSelectedIds.filter(id => id !== scheduleId);
+            ? [...selectedScheduleIds, scheduleId]
+            : selectedScheduleIds.filter(id => id !== scheduleId);
 
-        setLocalSelectedIds(newSelection);
         onMultipleSchedulesSelect?.(newSelection);
     };
 
@@ -146,9 +149,13 @@ export function ScheduleSelector({
         <div className="flex items-center gap-4">
             <div className="flex-1 ">
                 {compareMode ? (
-                    <div className="text-sm">
-                        <span className="font-medium">{localSelectedIds.length} Dienstpläne</span> zum Vergleich
-                        ausgewählt
+                    <div className="flex max-w-[720px] flex-wrap items-center gap-2">
+                        <Badge variant="outline">
+                            {schedulesMetadata.schedules.length} hochgeladen
+                        </Badge>
+                        <Badge variant="outline">
+                            {selectedScheduleIds.length} zum Vergleich
+                        </Badge>
                     </div>
                 ) : (
                     <>
@@ -167,7 +174,7 @@ export function ScheduleSelector({
                                             <div className="flex items-center gap-2">
                                                 {schedule.isSelected && <CheckCircle className="h-4 w-4"/>}
                                                 <span>
-                          {schedule.description ? (schedule.description!.length > 30 ? schedule.description!.slice(0, 30) + "..." : schedule.description || "Ohne Beschreibung") : "Ohne Beschreibung"} - {formatDate(schedule.generatedAt)}
+                          {getScheduleLabel(schedule.description)} - {formatDate(schedule.generatedAt)}
                         </span>
                                             </div>
                                         </SelectItem>
@@ -187,7 +194,7 @@ export function ScheduleSelector({
                         if (!selected) return null;
                         return (
                             <span>
-                Aktuell: {selected.description ? (selected.description!.length > 30 ? selected.description!.slice(0, 30) + "..." : selected.description) : "Ohne Beschreibung"} - {formatDate(selected.generatedAt)}
+                Aktuell: {getScheduleLabel(selected.description)} - {formatDate(selected.generatedAt)}
               </span>
                         );
                     })()}
@@ -212,7 +219,7 @@ export function ScheduleSelector({
 
                     <div className="space-y-4">
                         {sortedSchedules.map((schedule, index) => {
-                            const isChecked = localSelectedIds.includes(schedule.scheduleId);
+                            const isChecked = selectedScheduleIds.includes(schedule.scheduleId);
                             return (
                                 <Card
                                     key={schedule.scheduleId}
@@ -337,7 +344,7 @@ export function ScheduleSelector({
                                                         size="sm"
                                                         variant="destructive"
                                                         onClick={() => handleDelete(schedule.scheduleId)}
-                                                        disabled={isLoading || schedule.isSelected}
+                                                        disabled={isLoading}
                                                     >
                                                         <Trash2 className="h-4 w-4"/>
                                                     </Button>
