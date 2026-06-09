@@ -101,6 +101,10 @@ function toIsoDate(date: string | Date): string {
     return d.toISOString().split('T')[0];
 }
 
+function formatUnitForLog(unit: number | number[]): string {
+    return Array.isArray(unit) ? unit.join(',') : String(unit);
+}
+
 // ---------------------------------------------------------------------------
 // ISolverService implementation.
 // ---------------------------------------------------------------------------
@@ -147,7 +151,7 @@ export class SolverApiService implements ISolverService {
 
     async fetchData(params: FetchParams): Promise<SolverOperationResult> {
         const startTime = Date.now();
-        logger.info('Fetching data via API', { unit: params.unit, start: params.start, end: params.end });
+        logger.info('Fetching data via API', { unit: formatUnitForLog(params.unit), start: params.start, end: params.end });
 
         try {
             const result = await apiPost<object, ApiOperationResponse>(
@@ -178,7 +182,7 @@ export class SolverApiService implements ISolverService {
 
     async solve(params: SolveParams): Promise<SolveOperationResult> {
         const startTime = Date.now();
-        logger.info('Solving via API', { unit: params.unit, start: params.start, end: params.end, timeout: params.timeout });
+        logger.info('Solving via API', { unit: formatUnitForLog(params.unit), start: params.start, end: params.end, timeout: params.timeout });
 
         // Stretch the HTTP timeout beyond the solver timeout to avoid premature aborts.
         const httpTimeoutMs = params.timeout ? (params.timeout + 30) * 2 * 1000 : undefined;
@@ -192,6 +196,7 @@ export class SolverApiService implements ISolverService {
                     start_date: toIsoDate(params.start),
                     end_date: toIsoDate(params.end),
                     timeout: params.timeout ?? 300,
+                    shared_pool_enabled: params.sharedPoolEnabled ?? false
                 },
                 httpTimeoutMs
             );
@@ -214,7 +219,7 @@ export class SolverApiService implements ISolverService {
             return {
                 success: true,
                 status,
-                //solution: result.solution_data,
+                solution: result.solution_data,
                 duration,
                 consoleOutput: result.console_output,
             };
@@ -227,7 +232,7 @@ export class SolverApiService implements ISolverService {
 
     async solveMultiple(params: SolveMultipleParams): Promise<SolveMultipleOperationResult> {
         const startTime = Date.now();
-        logger.info('Solving multiple via API', { unit: params.unit, timeout: params.timeout });
+        logger.info('Solving multiple via API', { unit: formatUnitForLog(params.unit), timeout: params.timeout });
 
         // solve-multiple runs three solver passes, so give it a larger timeout buffer.
         const httpTimeoutMs = params.timeout ? (params.timeout * 3 + 60) * 2 * 1000 : undefined;
@@ -280,7 +285,7 @@ export class SolverApiService implements ISolverService {
 
     async insertSolution(params: InsertParams, solution?: ScheduleSolutionRaw): Promise<SolverOperationResult> {
         const startTime = Date.now();
-        logger.info('Inserting solution via API', { unit: params.unit });
+        logger.info('Inserting solution via API', { unit: formatUnitForLog(params.unit) });
 
         try {
             const result = await apiPost<object, ApiOperationResponse>(
@@ -312,7 +317,7 @@ export class SolverApiService implements ISolverService {
 
     async deleteData(params: DeleteParams, solution?: ScheduleSolutionRaw): Promise<SolverOperationResult> {
         const startTime = Date.now();
-        logger.info('Deleting data via API', { unit: params.unit });
+        logger.info('Deleting data via API', { unit: formatUnitForLog(params.unit) });
 
         try {
             const result = await apiPost<object, ApiOperationResponse>(
