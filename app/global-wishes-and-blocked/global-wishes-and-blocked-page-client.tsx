@@ -267,8 +267,7 @@ export function GlobalWishesAndBlockedPageClient({
                         <div>
                             <CardTitle>Globale Wünsche & Blockierungen</CardTitle>
                             <CardDescription>
-                                Verwalte allgemeine Wunsch-Tage, Wunsch-Schichten, blockierte Tage und blockierte
-                                Schichten für Mitarbeiter
+                                Verwalte monatsübergreifende freie und blockierte Tage und Schichten
                             </CardDescription>
                         </div>
                         <div className="flex gap-2">
@@ -320,7 +319,7 @@ export function GlobalWishesAndBlockedPageClient({
                     <AlertDialogHeader>
                         <AlertDialogTitle>Monatliche Wünsche werden zurückgesetzt</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Die monatlichen Wünsche für <strong>{pendingEmployeeName}</strong> werden gelöscht
+                            Die Wünsche für <strong>{pendingEmployeeName}</strong> in diesem Monat werden gelöscht
                             und aus den globalen Wünschen neu berechnet. Fortfahren?
                         </AlertDialogDescription>
                     </AlertDialogHeader>

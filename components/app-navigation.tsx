@@ -77,14 +77,14 @@ export function AppNavigation({isLocked, lockedCaseId, lockedMonthYear}: AppNavi
                                     <Link href={`/global-wishes-and-blocked${caseSearch}`}
                                           className="flex items-center gap-2 cursor-pointer">
                                         <Heart className="h-4 w-4"/>
-                                        Allgemeine Wünsche
+                                        Globale Wünsche
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
                                     <Link href={`/wishes-and-blocked${caseSearch}`}
                                           className="flex items-center gap-2 cursor-pointer">
                                         <Heart className="h-4 w-4"/>
-                                        Wünsche & Blockierungen
+                                        Wünsche diesen Monat
                                     </Link>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>

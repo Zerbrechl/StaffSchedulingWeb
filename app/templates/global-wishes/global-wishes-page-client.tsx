@@ -216,7 +216,7 @@ export function GlobalWishesTemplatesPageClient({caseId, monthYear, templates}: 
             >
                 <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
                     <DialogHeader>
-                        <DialogTitle>Template Vorschau</DialogTitle>
+                        <DialogTitle>Template-Vorschau</DialogTitle>
                     </DialogHeader>
                     {viewingTemplate && (
                         <div className="space-y-4 flex-1 overflow-hidden flex flex-col">

@@ -89,12 +89,12 @@ export function WishesAndBlockedList({
                                                 <div className="flex items-center gap-2">
                                                     <Heart className="h-4 w-4 text-green-500"/>
                                                     <Badge variant="outline" className="bg-green-50">
-                                                        {employee.wish_days.length} Wunsch-Tage
+                                                        {employee.wish_days.length} Gewünschte freie Tage
                                                     </Badge>
                                                 </div>
 
                                                 <Badge variant="outline" className="bg-green-100 ml-6">
-                                                    {employee.wish_shifts.length} Wunsch-Schichten
+                                                    {employee.wish_shifts.length} Gewünschte freie Schichten
                                                 </Badge>
 
                                             </div>
