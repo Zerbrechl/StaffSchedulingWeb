@@ -2,45 +2,77 @@ import {SolverPageClient} from './solver-page-client';
 import {getJobs, checkSolverHealth, getLastInsertedSolution} from '@/features/solver/solver.actions';
 import {getWorkflowSession} from '@/src/infrastructure/services/workflow-session.service';
 import {getSelectedScheduleAction} from '@/features/schedule/schedule.actions';
+import {listCasesAction} from '@/features/cases/cases.actions';
+import {CaseUnit} from '@/src/entities/models/case.model';
 
 export default async function SolverPage({
                                              searchParams,
                                          }: {
-    searchParams: Promise<{ caseId?: string; monthYear?: string }>;
+    searchParams: Promise<{ caseId?: string; caseIds?: string; monthYear?: string }>;
 }) {
-    const [{caseId: caseIdStr, monthYear}, workflowState] = await Promise.all([
-        searchParams,
-        getWorkflowSession(),
-    ]);
+    const [{caseId: caseIdStr, caseIds: caseIdsStr, monthYear}, workflowState] =
+        await Promise.all([searchParams, getWorkflowSession()]);
 
-    if (!caseIdStr || !monthYear) {
-        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case
-            aus</div>;
+    if (!monthYear || !/^(0?[1-9]|1[0-2])_\d{4}$/.test(monthYear)) {
+        return (
+            <div className="flex items-center justify-center h-64 text-muted-foreground">
+                Bitte wähle einen Monat aus
+            </div>
+        );
     }
 
-    const caseId = Number(caseIdStr);
-    if (isNaN(caseId) || caseId <= 0 || !/^(0?[1-9]|1[0-2])_\d{4}$/.test(monthYear)) {
-        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case
-            aus</div>;
-    }
+    const rawCaseIds = caseIdsStr ?? caseIdStr ?? '';
+    const selectedCaseIds = Array.from(
+        new Set(
+            rawCaseIds
+                .split(',')
+                .map(Number)
+                .filter(id => Number.isInteger(id) && id > 0)
+        )
+    );
 
-    const [configResult, jobsData, lastInsertedResult, selectedScheduleData] = await Promise.all([
-        checkSolverHealth(),
-        getJobs(caseId, monthYear).catch(() => ({jobs: []})),
-        getLastInsertedSolution(caseId, monthYear).catch(() => ({success: true, data: null})),
-        getSelectedScheduleAction(caseId, monthYear).catch(() => ({solution: null})),
-    ]);
-    const configValidation = configResult.success ? configResult.data : null;
-    const initialLastInsertedSolution = lastInsertedResult.success ? lastInsertedResult.data : null;
-    const initialPendingInsertSolution = selectedScheduleData.solution ?? null;
+    const {units} = await listCasesAction();
 
-    return <SolverPageClient
-        caseId={caseId}
-        monthYear={monthYear}
-        initialConfigValidation={configValidation}
-        initialJobs={jobsData.jobs}
-        initialLastInsertedSolution={initialLastInsertedSolution}
-        initialPendingInsertSolution={initialPendingInsertSolution}
-        isLocked={workflowState.isWorkflowMode}
-    />;
+    const availableCaseIds = units
+        .filter((unit: CaseUnit) => unit.months.includes(monthYear))
+        .map(unit => unit.unitId)
+        .sort((a, b) => a - b);
+
+    const activeCaseId =
+        selectedCaseIds.find(id => availableCaseIds.includes(id)) ?? null;
+
+    const [configResult, jobsData, lastInsertedResult, selectedScheduleData] =
+        activeCaseId
+            ? await Promise.all([
+                checkSolverHealth(),
+                getJobs(activeCaseId, monthYear).catch(() => ({jobs: []})),
+                getLastInsertedSolution(activeCaseId, monthYear).catch(() => ({
+                    success: true,
+                    data: null,
+                })),
+                getSelectedScheduleAction(activeCaseId, monthYear).catch(() => ({
+                    solution: null,
+                })),
+            ])
+            : await Promise.all([
+                checkSolverHealth(),
+                Promise.resolve({jobs: []}),
+                Promise.resolve({success: true, data: null}),
+                Promise.resolve({solution: null}),
+            ]);
+
+    return (
+        <SolverPageClient
+            caseId={activeCaseId}
+            monthYear={monthYear}
+            availableCaseIds={availableCaseIds}
+            initialConfigValidation={configResult.success ? configResult.data : null}
+            initialJobs={jobsData.jobs}
+            initialLastInsertedSolution={
+                lastInsertedResult.success ? lastInsertedResult.data : null
+            }
+            initialPendingInsertSolution={selectedScheduleData.solution ?? null}
+            isLocked={workflowState.isWorkflowMode}
+        />
+    );
 }

@@ -214,7 +214,7 @@ export class SolverApiService implements ISolverService {
             return {
                 success: true,
                 status,
-                solution: result.solution_data,
+                //solution: result.solution_data,
                 duration,
                 consoleOutput: result.console_output,
             };

@@ -2,7 +2,7 @@
 
 import {usePathname, useSearchParams} from 'next/navigation';
 import Link from 'next/link';
-import {CaseSelector} from '@/components/case-selector';
+import {MonthSelector} from '@/components/month-selector';
 import {Separator} from '@/components/ui/separator';
 import {Button} from '@/components/ui/button';
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,} from '@/components/ui/dropdown-menu';
@@ -32,7 +32,7 @@ export function AppNavigation({isLocked, lockedCaseId, lockedMonthYear}: AppNavi
     return (
         <div className="border-b bg-background sticky top-0 z-50">
             <div className="container mx-auto px-4">
-                <div className="flex items-center justify-between h-16 gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-4 py-2 min-h-16">
                     {/* Logo/Brand */}
                     <Link href={`/${caseSearch}`}
                           className="flex items-center gap-2 min-w-fit hover:opacity-80 transition-opacity">
@@ -43,7 +43,7 @@ export function AppNavigation({isLocked, lockedCaseId, lockedMonthYear}: AppNavi
                     </Link>
 
                     {/* Navigation links */}
-                    <div className="flex items-center gap-1 flex-1">
+                    <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0">
                         {/* Employees */}
                         <Button
                             variant="ghost"
@@ -198,11 +198,11 @@ export function AppNavigation({isLocked, lockedCaseId, lockedMonthYear}: AppNavi
                         </DropdownMenu>
                     </div>
 
-                    <Separator orientation="vertical" className="h-8 hidden lg:block"/>
+                    <Separator orientation="vertical" className="mx-2 h-8 w-px bg-border shrink-0"/>
 
-                    {/* Case selector */}
-                    <div className="min-w-fit">
-                        <CaseSelector
+                    {/* Month/case selector */}
+                    <div className="w-full flex justify-start lg:w-auto lg:justify-end">
+                        <MonthSelector
                             disabled={isLocked}
                             lockedCaseId={lockedCaseId}
                             lockedMonthYear={lockedMonthYear}
