@@ -74,10 +74,10 @@ export function WishesAndBlockedPageClient({caseId, monthYear, employees}: Wishe
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle>Wünsche & Blockierungen</CardTitle>
+                            <CardTitle>Wünsche & Blockierungen diesen Monat</CardTitle>
                             <CardDescription>
-                                Verwalte Wunsch-Tage, Wunsch-Schichten, blockierte Tage und blockierte Schichten für
-                                Mitarbeiter
+                                Verwalte freie und blockierte Tage und Schichten
+                                für diesen Monat
                             </CardDescription>
                         </div>
                         <Button onClick={handleCreate}>

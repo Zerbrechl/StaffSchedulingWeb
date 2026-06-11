@@ -81,9 +81,9 @@ export function ImportGlobalWishesTemplateDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
                 <DialogHeader>
-                    <DialogTitle>Global Wishes Template laden</DialogTitle>
+                    <DialogTitle>Template laden</DialogTitle>
                     <DialogDescription>
-                        Wählen Sie ein Template aus. Es werden nur Wünsche für Mitarbeiter importiert, die im aktuellen
+                        Wählen Sie ein Template für die globalen Wünsche aus. Es werden nur Wünsche für Mitarbeiter importiert, die im aktuellen
                         Monat vorhanden sind.
                     </DialogDescription>
                 </DialogHeader>

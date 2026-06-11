@@ -200,8 +200,8 @@ export function WishesAndBlockedForm({
 
     // Categories for day types (preferred day, blocked day)
     const dayCategories = [
-        {id: 'wish', name: 'Wunsch-Tag', color: '#bbf7d0'},
-        {id: 'blocked', name: 'Blockiert', color: '#fecaca'},
+        {id: 'wish', name: 'Gewünschter freier Tag', color: '#bfdbfe'},
+        {id: 'blocked', name: 'Blockierter Tag', color: '#fecaca'},
     ];
 
     // Categories for shifts
@@ -285,12 +285,12 @@ export function WishesAndBlockedForm({
                             {/* Summary Stats */}
                             <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                                 <div className="text-center">
-                                    <div className="text-2xl font-bold text-green-600">{wishDaysCount}</div>
-                                    <div className="text-xs text-muted-foreground">Wunsch-Tage</div>
+                                    <div className="text-2xl font-bold text-blue-600">{wishDaysCount}</div>
+                                    <div className="text-xs text-muted-foreground">Gewünschte freie Tage</div>
                                 </div>
                                 <div className="text-center">
-                                    <div className="text-2xl font-bold text-green-500">{wishShiftsCount}</div>
-                                    <div className="text-xs text-muted-foreground">Wunsch-Schichten</div>
+                                    <div className="text-2xl font-bold text-blue-500">{wishShiftsCount}</div>
+                                    <div className="text-xs text-muted-foreground">Gewünschte freie Schichten</div>
                                 </div>
                                 <div className="text-center">
                                     <div className="text-2xl font-bold text-red-600">{blockedDaysCount}</div>
