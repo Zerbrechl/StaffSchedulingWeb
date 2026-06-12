@@ -10,6 +10,7 @@ export const WeightTypeSchema = z.enum([
     'wishes',
     'after_night',
     'second_weekend',
+    'fairness',
 ]);
 
 export type WeightType = z.infer<typeof WeightTypeSchema>;
@@ -32,6 +33,7 @@ export const WeightsSchema = z.object({
     wishes: z.number(),
     after_night: z.number(),
     second_weekend: z.number(),
+    fairness: z.number(),
 });
 
 export type Weights = z.infer<typeof WeightsSchema>;
@@ -82,6 +84,11 @@ export const WEIGHT_METADATA: WeightMetadata[] = [
         label: 'Jedes zweite Wochenende frei',
         description: 'Abwechselnde freie Wochenenden anstreben',
     },
+    {
+        key: 'fairness',
+        label: 'Fairness',
+        description: 'Faire Verteilung von Schichten und Belastung zwischen Mitarbeitern',
+    },
 ];
 
 export const DEFAULT_WEIGHTS: Weights = {
@@ -94,4 +101,5 @@ export const DEFAULT_WEIGHTS: Weights = {
     wishes: 3,
     after_night: 3,
     second_weekend: 1,
+    fairness: 3,
 };
