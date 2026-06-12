@@ -1,3 +1,5 @@
+import { request as httpRequest } from 'http';
+import { request as httpsRequest } from 'https';
 import { createApiLogger } from '@/lib/logging/logger';
 import { getSolverApiConfig } from '@/lib/config/app-config';
 import type {
@@ -62,26 +64,58 @@ async function apiPost<TBody, TResponse>(
     body: TBody,
     timeoutMs?: number
 ): Promise<TResponse> {
-    const controller = new AbortController();
-    const timerId = timeoutMs ? setTimeout(() => controller.abort(), timeoutMs) : undefined;
+    return new Promise<TResponse>((resolve, reject) => {
+        const url = new URL(`${baseUrl}${path}`);
+        const payload = JSON.stringify(body);
+        const request = url.protocol === 'https:' ? httpsRequest : httpRequest;
 
-    try {
-        const response = await fetch(`${baseUrl}${path}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-            signal: controller.signal,
+        const req = request(
+            url,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(payload),
+                },
+            },
+            (response) => {
+                const chunks: Buffer[] = [];
+
+                response.on('data', (chunk: Buffer) => chunks.push(chunk));
+                response.on('end', () => {
+                    if (timerId !== undefined) clearTimeout(timerId);
+
+                    const responseText = Buffer.concat(chunks).toString('utf-8');
+                    const statusCode = response.statusCode ?? 0;
+
+                    if (statusCode < 200 || statusCode >= 300) {
+                        reject(new Error(`HTTP ${statusCode}: ${responseText || response.statusMessage || 'Unknown error'}`));
+                        return;
+                    }
+
+                    try {
+                        resolve(JSON.parse(responseText) as TResponse);
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            }
+        );
+
+        const timerId = timeoutMs
+            ? setTimeout(() => {
+                req.destroy(new Error(`Request timed out after ${timeoutMs}ms`));
+            }, timeoutMs)
+            : undefined;
+
+        req.on('error', (error) => {
+            if (timerId !== undefined) clearTimeout(timerId);
+            reject(error);
         });
 
-        if (!response.ok) {
-            const errorText = await response.text().catch(() => 'Unknown error');
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
-        }
-
-        return response.json() as Promise<TResponse>;
-    } finally {
-        if (timerId !== undefined) clearTimeout(timerId);
-    }
+        req.write(payload);
+        req.end();
+    });
 }
 
 async function apiGet<TResponse>(baseUrl: string, path: string): Promise<TResponse> {
@@ -99,6 +133,10 @@ async function apiGet<TResponse>(baseUrl: string, path: string): Promise<TRespon
 function toIsoDate(date: string | Date): string {
     const d = typeof date === 'string' ? new Date(date) : date;
     return d.toISOString().split('T')[0];
+}
+
+function formatUnitForLog(unit: number | number[]): string {
+    return Array.isArray(unit) ? unit.join(',') : String(unit);
 }
 
 // ---------------------------------------------------------------------------
@@ -147,7 +185,7 @@ export class SolverApiService implements ISolverService {
 
     async fetchData(params: FetchParams): Promise<SolverOperationResult> {
         const startTime = Date.now();
-        logger.info('Fetching data via API', { unit: params.unit, start: params.start, end: params.end });
+        logger.info('Fetching data via API', { unit: formatUnitForLog(params.unit), start: params.start, end: params.end });
 
         try {
             const result = await apiPost<object, ApiOperationResponse>(
@@ -178,10 +216,11 @@ export class SolverApiService implements ISolverService {
 
     async solve(params: SolveParams): Promise<SolveOperationResult> {
         const startTime = Date.now();
-        logger.info('Solving via API', { unit: params.unit, start: params.start, end: params.end, timeout: params.timeout });
+        logger.info('Solving via API', { unit: formatUnitForLog(params.unit), start: params.start, end: params.end, timeout: params.timeout });
 
         // Stretch the HTTP timeout beyond the solver timeout to avoid premature aborts.
-        const httpTimeoutMs = params.timeout ? (params.timeout + 30) * 2 * 1000 : undefined;
+        const solverTimeoutSec = params.timeout ?? 300;
+        const httpTimeoutMs = (solverTimeoutSec + 30) * 2 * 1000;
 
         try {
             const result = await apiPost<object, ApiSolveResponse>(
@@ -191,7 +230,8 @@ export class SolverApiService implements ISolverService {
                     unit: params.unit,
                     start_date: toIsoDate(params.start),
                     end_date: toIsoDate(params.end),
-                    timeout: params.timeout ?? 300,
+                    timeout: solverTimeoutSec,
+                    shared_pool_enabled: params.sharedPoolEnabled ?? false
                 },
                 httpTimeoutMs
             );
@@ -214,7 +254,7 @@ export class SolverApiService implements ISolverService {
             return {
                 success: true,
                 status,
-                //solution: result.solution_data,
+                solution: result.solution_data,
                 duration,
                 consoleOutput: result.console_output,
             };
@@ -227,10 +267,11 @@ export class SolverApiService implements ISolverService {
 
     async solveMultiple(params: SolveMultipleParams): Promise<SolveMultipleOperationResult> {
         const startTime = Date.now();
-        logger.info('Solving multiple via API', { unit: params.unit, timeout: params.timeout });
+        logger.info('Solving multiple via API', { unit: formatUnitForLog(params.unit), timeout: params.timeout });
 
         // solve-multiple runs three solver passes, so give it a larger timeout buffer.
-        const httpTimeoutMs = params.timeout ? (params.timeout * 3 + 60) * 2 * 1000 : undefined;
+        const solverTimeoutSec = params.timeout ?? 300;
+        const httpTimeoutMs = (solverTimeoutSec * 3 + 60) * 2 * 1000;
 
         try {
             const result = await apiPost<object, ApiSolveMultipleResponse>(
@@ -240,7 +281,7 @@ export class SolverApiService implements ISolverService {
                     unit: params.unit,
                     start_date: toIsoDate(params.start),
                     end_date: toIsoDate(params.end),
-                    timeout: params.timeout ?? 300,
+                    timeout: solverTimeoutSec,
                 },
                 httpTimeoutMs
             );
@@ -280,7 +321,7 @@ export class SolverApiService implements ISolverService {
 
     async insertSolution(params: InsertParams, solution?: ScheduleSolutionRaw): Promise<SolverOperationResult> {
         const startTime = Date.now();
-        logger.info('Inserting solution via API', { unit: params.unit });
+        logger.info('Inserting solution via API', { unit: formatUnitForLog(params.unit) });
 
         try {
             const result = await apiPost<object, ApiOperationResponse>(
@@ -312,7 +353,7 @@ export class SolverApiService implements ISolverService {
 
     async deleteData(params: DeleteParams, solution?: ScheduleSolutionRaw): Promise<SolverOperationResult> {
         const startTime = Date.now();
-        logger.info('Deleting data via API', { unit: params.unit });
+        logger.info('Deleting data via API', { unit: formatUnitForLog(params.unit) });
 
         try {
             const result = await apiPost<object, ApiOperationResponse>(

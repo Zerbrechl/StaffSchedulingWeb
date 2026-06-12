@@ -100,7 +100,7 @@ export function SolverControlPanel({caseId, selectedCaseIds = [], monthYear, onA
         lastInsertedSolution,
     } = useSolverOperations({onAfterOperation, initialLastInsertedSolution: initialLastInsertedSolution ?? null, initialPendingInsertSolution: initialPendingInsertSolution ?? null});
 
-    const buildExecutionOptions = (targetCaseId: number) => {
+    const buildExecutionOptions = (targetCaseIds: number[]) => {
         if (selectedMonth === null || selectedYear === null) {
             return null;
         }
@@ -119,10 +119,12 @@ export function SolverControlPanel({caseId, selectedCaseIds = [], monthYear, onA
             String(lastDay.getDate()).padStart(2, '0');
 
         return {
-            caseId: targetCaseId,
+            caseId: targetCaseIds[0],
+            caseIds: targetCaseIds,
             monthYear,
             start,
             end,
+            sharedPoolEnabled: enableSharedPool,
         };
     };
 
@@ -134,78 +136,55 @@ export function SolverControlPanel({caseId, selectedCaseIds = [], monthYear, onA
             selectedCaseIds.length > 0
                 ? selectedCaseIds
                 : [caseId];
-        /**
-         * Shared pool mode placeholder.
-         */
-        if (command === 'solve' && enableSharedPool) {
-            console.log('Shared pool solving is not implemented yet.', {
-                caseIds: targetCaseIds,
-                monthYear,
-            });
+        const execOpts = buildExecutionOptions(targetCaseIds);
 
-            return;
-        }
+        if (!execOpts) return;
 
-        /**
-         * Apply action to all selected cases one by one.
-         */
-        let lastSuccessfulCaseId = caseId;
-        const isMultipleExecution = targetCaseIds.length > 1;
-        
-        for (let i = 0; i < targetCaseIds.length; i++) {
-            const targetCaseId = targetCaseIds[i];
-            const isLastCase = i === targetCaseIds.length - 1;
-            const skipFinish = isMultipleExecution && !isLastCase;
-            
-            const execOpts = buildExecutionOptions(targetCaseId);
+        let fetchSucceeded = false;
 
-            if (!execOpts) return;
-
-            switch (command) {
-                case 'fetch': {
-                    const result = await executeFetch(execOpts, skipFinish);
-                    if (result.succeeded) {
-                        lastSuccessfulCaseId = targetCaseId;
-                    }
-                    break;
-                }
-                case 'solve':
-                    await executeSolve(execOpts, parseInt(solveTimeout, 10), skipFinish);
-                    break;
-                case 'solve-multiple':
-                    await executeSolveMultiple(execOpts, parseInt(solveTimeout, 10), skipFinish);
-                    break;
-                case 'insert':
-                    if (!pendingInsertSolution) {
-                        setQueuedCmd('insert');
-                        setQueuedOpts(execOpts);
-                        setShowInsertMissingDialog(true);
-                        return;
-                    }
-                    await executeInsert(execOpts, skipFinish);
-                    break;
-                case 'delete': {
-                    if (!lastInsertedSolution) {
-                        setQueuedCmd('delete');
-                        setQueuedOpts(execOpts);
-                        setShowDeleteMissingDialog(true);
-                        return;
-                    }
-                    // ask for final confirmation too
-                    setQueuedCmd('delete');
+        switch (command) {
+            case 'fetch': {
+                const result = await executeFetch(execOpts);
+                fetchSucceeded = result.succeeded;
+                break;
+            }
+            case 'solve':
+                await executeSolve(execOpts, parseInt(solveTimeout, 10));
+                break;
+            case 'solve-multiple':
+                await executeSolveMultiple(execOpts, parseInt(solveTimeout, 10));
+                break;
+            case 'insert':
+                if (!pendingInsertSolution) {
+                    setQueuedCmd('insert');
                     setQueuedOpts(execOpts);
-                    setShowDeleteConfirmDialog(true);
+                    setShowInsertMissingDialog(true);
                     return;
                 }
+                await executeInsert(execOpts);
+                break;
+            case 'delete': {
+                if (!lastInsertedSolution) {
+                    setQueuedCmd('delete');
+                    setQueuedOpts(execOpts);
+                    setShowDeleteMissingDialog(true);
+                    return;
+                }
+                // ask for final confirmation too
+                setQueuedCmd('delete');
+                setQueuedOpts(execOpts);
+                setShowDeleteConfirmDialog(true);
+                return;
             }
         }
 
-        // After all cases are processed, navigate to the last successful case
-        if (command === 'fetch' && selectedMonth !== null && selectedYear !== null) {
+        // After fetch, keep the first selected case active while preserving the multi-case selection in the URL.
+        if (command === 'fetch' && fetchSucceeded && selectedMonth !== null && selectedYear !== null) {
             const monthStr = String(selectedMonth).padStart(2, '0');
             const newMonthYear = `${monthStr}_${selectedYear}`;
             const params = new URLSearchParams(searchParams.toString());
-            params.set('caseId', String(lastSuccessfulCaseId));
+            params.set('caseId', String(targetCaseIds[0]));
+            params.set('caseIds', targetCaseIds.join(','));
             params.set('monthYear', newMonthYear);
             router.push(`${pathname}?${params.toString()}`);
         }
@@ -365,7 +344,7 @@ export function SolverControlPanel({caseId, selectedCaseIds = [], monthYear, onA
                             </Label>
 
                             <p className="text-sm text-muted-foreground">
-                                Off: solve selected cases one by one. On: reserved for shared-pool implementation.
+                                Sendet dem Solver, ob ausgewählte Cases als gemeinsamer Pool behandelt werden sollen.
                             </p>
                         </div>
 

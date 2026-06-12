@@ -14,9 +14,11 @@ import type { ScheduleSolutionRaw } from '@/src/entities/models/schedule.model';
 
 export interface SolverExecOptions {
     caseId: number;
+    caseIds?: number[];
     monthYear: string;
     start: string;
     end: string;
+    sharedPoolEnabled?: boolean;
 }
 
 export interface ImportDialogParams {
@@ -220,15 +222,12 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
         await onAfterOperation?.();
     };
 
-    const finishExecutionImmediate = () => {
-        setIsExecuting(false);
-    };
-
     async function executeFetch(opts: SolverExecOptions, skipFinish: boolean = false): Promise<SolverOperationResult> {
         if (!skipFinish) startExecution(60_000);
+        const unit = opts.caseIds && opts.caseIds.length > 1 ? opts.caseIds : opts.caseId;
         try {
             const result = await solverFetch(opts.caseId, opts.monthYear, {
-                unit: opts.caseId,
+                unit,
                 start: opts.start,
                 end: opts.end,
             });
@@ -251,12 +250,14 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
         if (!skipFinish) {
             startExecution(timeout * 1_000 + 10_000, timeout);
         }
+        const unit = opts.caseIds && opts.caseIds.length > 1 ? opts.caseIds : opts.caseId;
         try {
             const result = await solverSolve(opts.caseId, opts.monthYear, {
-                unit: opts.caseId,
+                unit,
                 start: opts.start,
                 end: opts.end,
                 timeout,
+                sharedPoolEnabled: opts.sharedPoolEnabled,
             });
             if (!result.success) {
                 toast.error(result.error);
@@ -290,9 +291,10 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
 
     async function executeSolveMultiple(opts: SolverExecOptions, timeout: number, skipFinish: boolean = false): Promise<SolverOperationResult> {
         if (!skipFinish) startExecution(timeout * 3 * 1_000 + 20_000, timeout);
+        const unit = opts.caseIds && opts.caseIds.length > 1 ? opts.caseIds : opts.caseId;
         try {
             const result = await solverSolveMultiple(opts.caseId, opts.monthYear, {
-                unit: opts.caseId,
+                unit,
                 start: opts.start,
                 end: opts.end,
                 timeout,
@@ -339,9 +341,10 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
 
     async function executeInsert(opts: SolverExecOptions, skipFinish: boolean = false): Promise<SolverOperationResult> {
         if (!skipFinish) startExecution(60_000);
+        const unit = opts.caseIds && opts.caseIds.length > 1 ? opts.caseIds : opts.caseId;
         try {
             const result = await solverInsert(opts.caseId, opts.monthYear, {
-                unit: opts.caseId,
+                unit,
                 start: opts.start,
                 end: opts.end,
             }, pendingInsertSolution ?? undefined);
@@ -363,9 +366,10 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
 
     async function executeDelete(opts: SolverExecOptions, skipFinish: boolean = false): Promise<SolverOperationResult> {
         if (!skipFinish) startExecution(60_000);
+        const unit = opts.caseIds && opts.caseIds.length > 1 ? opts.caseIds : opts.caseId;
         try {
             const result = await solverDelete(opts.caseId, opts.monthYear, {
-                unit: opts.caseId,
+                unit,
                 start: opts.start,
                 end: opts.end,
             }, lastInsertedSolution ?? undefined);
