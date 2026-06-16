@@ -9,6 +9,19 @@ interface EmployeeCaseData {
     employees: Employee[];
 }
 
+interface EmployeeCaseError {
+    caseId: number;
+    error: string;
+}
+
+type EmployeeResult =
+    | { caseId: number; employees: Employee[]; error: null }
+    | { caseId: number; employees: Employee[]; error: string };
+
+function getErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+}
+
 export default async function EmployeesPage({
                                                 searchParams,
                                             }: {
@@ -40,12 +53,37 @@ export default async function EmployeesPage({
         .filter((unit: CaseUnit) => unit.months.includes(monthYear))
         .map(unit => unit.unitId);
 
-    const employeeCases: EmployeeCaseData[] = await Promise.all(
-        caseIds.map(async caseId => ({
-            caseId,
-            employees: await getAllEmployeesAction(caseId, monthYear),
-        }))
+    const employeeResults: EmployeeResult[] = await Promise.all(
+        caseIds.map(async caseId => {
+            try {
+                return {
+                    caseId,
+                    employees: await getAllEmployeesAction(caseId, monthYear),
+                    error: null,
+                };
+            } catch (error) {
+                return {
+                    caseId,
+                    employees: [],
+                    error: getErrorMessage(error),
+                };
+            }
+        })
     );
 
-    return <EmployeesPageClient employeeCases={employeeCases} availableCaseIds={availableCaseIds}/>;
+    const employeeCases: EmployeeCaseData[] = employeeResults
+        .filter(result => result.error === null)
+        .map(({caseId, employees}) => ({caseId, employees}));
+
+    const employeeErrors: EmployeeCaseError[] = employeeResults
+        .filter((result): result is { caseId: number; employees: Employee[]; error: string } => result.error !== null)
+        .map(({caseId, error}) => ({caseId, error}));
+
+    return (
+        <EmployeesPageClient
+            employeeCases={employeeCases}
+            employeeErrors={employeeErrors}
+            availableCaseIds={availableCaseIds}
+        />
+    );
 }

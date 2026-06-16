@@ -10,10 +10,16 @@ import {Input} from '@/components/ui/input';
 import {Search} from 'lucide-react';
 import {filterEmployees} from '@/features/employees/utils/filter-employees';
 import {Button} from '@/components/ui/button';
+import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
 
 interface EmployeeCaseData {
     caseId: number;
     employees: Employee[];
+}
+
+interface EmployeeCaseError {
+    caseId: number;
+    error: string;
 }
 
 interface EmployeeRow extends Employee {
@@ -22,10 +28,11 @@ interface EmployeeRow extends Employee {
 
 interface EmployeesPageClientProps {
     employeeCases: EmployeeCaseData[];
+    employeeErrors: EmployeeCaseError[];
     availableCaseIds: number[];
 }
 
-export function EmployeesPageClient({employeeCases, availableCaseIds}: EmployeesPageClientProps) {
+export function EmployeesPageClient({employeeCases, employeeErrors, availableCaseIds}: EmployeesPageClientProps) {
     const searchParams = useSearchParams();
     const pathname = usePathname();
     const router = useRouter();
@@ -46,6 +53,11 @@ export function EmployeesPageClient({employeeCases, availableCaseIds}: Employees
     const visibleCases = useMemo(
         () => employeeCases.filter(({caseId}) => visibleCaseIds.includes(caseId)),
         [employeeCases, visibleCaseIds]
+    );
+
+    const visibleErrors = useMemo(
+        () => employeeErrors.filter(({caseId}) => visibleCaseIds.includes(caseId)),
+        [employeeErrors, visibleCaseIds]
     );
 
     const sortedAvailableCaseIds = useMemo(
@@ -136,6 +148,19 @@ export function EmployeesPageClient({employeeCases, availableCaseIds}: Employees
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                    {visibleErrors.length > 0 && (
+                        <Alert variant="destructive">
+                            <AlertTitle>Mitarbeiter konnten nicht geladen werden</AlertTitle>
+                            <AlertDescription>
+                                {visibleErrors.map(({caseId, error}) => (
+                                    <div key={caseId}>
+                                        Case {caseId}: {error}
+                                    </div>
+                                ))}
+                            </AlertDescription>
+                        </Alert>
+                    )}
+
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
                         <Input
