@@ -87,14 +87,14 @@ export function WishesAndBlockedList({
                                         <TableCell>
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex items-center gap-2">
-                                                    <Heart className="h-4 w-4 text-green-500"/>
-                                                    <Badge variant="outline" className="bg-green-50">
-                                                        {employee.wish_days.length} Wunsch-Tage
+                                                    <Heart className="h-4 w-4 text-blue-500"/>
+                                                    <Badge variant="outline" className="bg-blue-50">
+                                                        {employee.wish_days.length} Gewünschte freie Tage
                                                     </Badge>
                                                 </div>
 
-                                                <Badge variant="outline" className="bg-green-100 ml-6">
-                                                    {employee.wish_shifts.length} Wunsch-Schichten
+                                                <Badge variant="outline" className="bg-blue-100 ml-6">
+                                                    {employee.wish_shifts.length} Gewünschte freie Schichten
                                                 </Badge>
 
                                             </div>

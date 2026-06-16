@@ -13,8 +13,15 @@ export type SolverCommandType = z.infer<typeof SolverCommandTypeSchema>;
 export const SolverJobStatusSchema = z.enum(['completed', 'failed']);
 export type SolverJobStatus = z.infer<typeof SolverJobStatusSchema>;
 
+export const SolverUnitParamSchema = z.union([
+    z.number(),
+    z.array(z.number().int().positive()).min(1),
+]);
+
+export type SolverUnitParam = z.infer<typeof SolverUnitParamSchema>;
+
 export const BaseSolverParamsSchema = z.object({
-    unit: z.number(),
+    unit: SolverUnitParamSchema,
     start: z.string(),
     end: z.string(),
 });
@@ -26,6 +33,7 @@ export type FetchParams = z.infer<typeof FetchParamsSchema>;
 
 export const SolveParamsSchema = BaseSolverParamsSchema.extend({
     timeout: z.number().optional(),
+    sharedPoolEnabled: z.boolean().optional(),
 });
 
 export type SolveParams = z.infer<typeof SolveParamsSchema>;
