@@ -1,13 +1,15 @@
-import path from 'path';
-import {JSONFilePreset} from 'lowdb/node';
-import fs from 'fs/promises';
-import {getCasePath} from '@/lib/config/app-config';
+import {getSolverApiConfig} from '@/lib/config/app-config';
 import {ScheduleDatabase, SchedulesMetadata, ScheduleSolutionRaw} from "@/src/entities/models";
 
-async function ensureWebDir(caseId: number, monthYear: string): Promise<string> {
-    const webDir = path.join(getCasePath(caseId, monthYear), 'web');
-    await fs.mkdir(webDir, {recursive: true});
-    return webDir;
+function getScheduleApiUrl(caseId: number, monthYear: string, endpoint: string) {
+    const [month, year] = monthYear.split('_').map(Number);
+    const fromDate = new Date(Date.UTC(year, month - 1, 1));
+    const url = new URL(`${getSolverApiConfig().baseUrl}${endpoint}`);
+
+    url.searchParams.set('planning_unit', String(caseId));
+    url.searchParams.set('from_date', fromDate.toISOString().split('T')[0]);
+
+    return url;
 }
 
 /**
@@ -19,9 +21,20 @@ async function ensureWebDir(caseId: number, monthYear: string): Promise<string> 
  * @returns Promise resolving to the schedules metadata database instance
  */
 export async function getSchedulesMetadataDb(caseId: number, monthYear: string) {
-    const webDir = await ensureWebDir(caseId, monthYear);
-    const filePath = path.join(webDir, 'schedules.json');
-    return JSONFilePreset<SchedulesMetadata>(filePath, {schedules: [], selectedScheduleId: null});
+    const url = getScheduleApiUrl(caseId, monthYear, '/schedules/metadata');
+    const response = await fetch(url, {cache: 'no-store'});
+    const db = {
+        data: response.ok ? await response.json() as SchedulesMetadata : {schedules: [], selectedScheduleId: null},
+        async write() {
+            await fetch(url, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({data: db.data}),
+            });
+        },
+    };
+
+    return db;
 }
 
 /**
@@ -34,9 +47,19 @@ export async function getSchedulesMetadataDb(caseId: number, monthYear: string) 
  * @returns Promise resolving to the schedule database instance
  */
 export async function getScheduleDb(caseId: number, monthYear: string, scheduleId: string) {
-    const webDir = await ensureWebDir(caseId, monthYear);
-    const filePath = path.join(webDir, `schedule_${scheduleId}.json`);
-    return JSONFilePreset<ScheduleDatabase>(filePath, {solution: null});
+    const url = getScheduleApiUrl(caseId, monthYear, `/schedules/${scheduleId}`);
+    const response = await fetch(url, {cache: 'no-store'});
+    const db = {
+        data: response.ok ? await response.json() as ScheduleDatabase : {solution: null},
+        async write() {
+            await fetch(url, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({data: db.data}),
+            });
+        },
+    };
+    return db;
 }
 
 /**
@@ -47,40 +70,23 @@ export async function getScheduleDb(caseId: number, monthYear: string, scheduleI
  * @param scheduleId - The ID of the schedule to delete
  */
 export async function deleteSchedule(caseId: number, monthYear: string, scheduleId: string): Promise<void> {
-    const filePath = path.join(getCasePath(caseId, monthYear), 'web', `schedule_${scheduleId}.json`);
-    try {
-        await fs.unlink(filePath);
-    } catch (error) {
-        // File might not exist, ignore error
-    }
-}
-
-/** File path for the last-inserted solution marker. */
-function getLastInsertedPath(caseId: number, monthYear: string): string {
-    return path.join(getCasePath(caseId, monthYear), 'web', 'last_inserted.json');
+    await fetch(getScheduleApiUrl(caseId, monthYear, `/schedules/${scheduleId}`), {method: 'DELETE'});
 }
 
 export async function saveLastInsertedDb(caseId: number, monthYear: string, solution: ScheduleSolutionRaw): Promise<void> {
-    await ensureWebDir(caseId, monthYear);
-    const filePath = getLastInsertedPath(caseId, monthYear);
-    await fs.writeFile(filePath, JSON.stringify(solution, null, 2), 'utf-8');
+    await fetch(getScheduleApiUrl(caseId, monthYear, '/schedules/last-inserted'), {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({data: solution}),
+    });
 }
 
 export async function getLastInsertedDb(caseId: number, monthYear: string): Promise<ScheduleSolutionRaw | null> {
-    const filePath = getLastInsertedPath(caseId, monthYear);
-    try {
-        const content = await fs.readFile(filePath, 'utf-8');
-        return JSON.parse(content) as ScheduleSolutionRaw;
-    } catch {
-        return null;
-    }
+    const response = await fetch(getScheduleApiUrl(caseId, monthYear, '/schedules/last-inserted'), {cache: 'no-store'});
+
+    return response.ok ? await response.json() as ScheduleSolutionRaw : null;
 }
 
 export async function clearLastInsertedDb(caseId: number, monthYear: string): Promise<void> {
-    const filePath = getLastInsertedPath(caseId, monthYear);
-    try {
-        await fs.unlink(filePath);
-    } catch {
-        // File might not exist, ignore
-    }
+    await fetch(getScheduleApiUrl(caseId, monthYear, '/schedules/last-inserted'), {method: 'DELETE'});
 }

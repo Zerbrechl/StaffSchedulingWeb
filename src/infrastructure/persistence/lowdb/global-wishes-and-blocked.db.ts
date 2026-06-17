@@ -1,9 +1,24 @@
-import {JSONFilePreset} from 'lowdb/node';
-import path from 'path';
 import {GlobalWishesAndBlockedDatabase} from "@/src/entities/models";
-import {getCasePath} from "@/lib/config/app-config";
+import {getSolverApiConfig} from "@/lib/config/app-config";
 
 export async function getGlobalWishesAndBlockedDb(caseId: number, monthYear: string) {
-    const filePath = path.join(getCasePath(caseId, monthYear), 'global_wishes_and_blocked.json');
-    return JSONFilePreset<GlobalWishesAndBlockedDatabase>(filePath, {employees: []});
+    const [month, year] = monthYear.split('_').map(Number);
+    const fromDate = new Date(Date.UTC(year, month - 1, 1));
+    const url = new URL(`${getSolverApiConfig().baseUrl}/global-wishes-and-blocked`);
+
+    url.searchParams.set('planning_unit', String(caseId));
+    url.searchParams.set('from_date', fromDate.toISOString().split('T')[0]);
+
+    const response = await fetch(url, {cache: 'no-store'});
+
+    return {
+        data: response.ok ? await response.json() as GlobalWishesAndBlockedDatabase : {employees: []},
+        async write() {
+            await fetch(url, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({data: this.data}),
+            });
+        }
+    };
 }

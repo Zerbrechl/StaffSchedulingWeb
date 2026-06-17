@@ -1,7 +1,4 @@
-import {JSONFilePreset} from 'lowdb/node';
-import path from 'path';
-import fs from 'fs/promises';
-import {getCasesDirectory} from '@/lib/config/app-config';
+import {getSolverApiConfig} from '@/lib/config/app-config';
 import {Template, TemplateType} from '@/src/entities/models/template.model';
 
 export interface TemplateDatabase {
@@ -9,9 +6,21 @@ export interface TemplateDatabase {
 }
 
 export async function getTemplateDb(caseId: number, templateType: TemplateType) {
-    const casesDir = getCasesDirectory();
-    const dir = path.join(casesDir, caseId.toString(), 'templates');
-    await fs.mkdir(dir, {recursive: true});
-    const filePath = path.join(dir, `${templateType}.json`);
-    return JSONFilePreset<TemplateDatabase>(filePath, { templates: [] });
+    const url = new URL(`${getSolverApiConfig().baseUrl}/templates/${templateType}`);
+
+    url.searchParams.set('planning_unit', String(caseId));
+
+    const response = await fetch(url, {cache: 'no-store'});
+    const db = {
+        data: response.ok ? await response.json() as TemplateDatabase : {templates: []},
+        async write() {
+            await fetch(url, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({data: db.data}),
+            });
+        },
+    };
+
+    return db;
 }
