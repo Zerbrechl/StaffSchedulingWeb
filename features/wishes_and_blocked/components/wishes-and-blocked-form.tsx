@@ -200,14 +200,14 @@ export function WishesAndBlockedForm({
 
     // Categories for day types (preferred day, blocked day)
     const dayCategories = [
-        {id: 'wish', name: 'Gewünschter freier Tag', color: '#bfdbfe'},
-        {id: 'blocked', name: 'Blockierter Tag', color: '#fecaca'},
+        {id: 'wish', name: 'Gewünschter freier Tag', color: '#60a5fa'},
+        {id: 'blocked', name: 'Blockierter Tag', color: '#dc2626'},
     ];
 
     // Categories for shifts
     const eventCategories = [
-        {id: 'wish-shift', name: 'Wunsch-Schicht', color: '#ef4444'},
-        {id: 'blocked-shift', name: 'Blockierte Schicht', color: '#000000'},
+        {id: 'wish-shift', name: 'Gewünschte freie Schicht', color: '#bfdbfe'},
+        {id: 'blocked-shift', name: 'Blockierte Schicht', color: '#fecaca'},
     ];
 
     const handleFormSubmit = () => {
@@ -289,7 +289,7 @@ export function WishesAndBlockedForm({
                                     <div className="text-xs text-muted-foreground">Gewünschte freie Tage</div>
                                 </div>
                                 <div className="text-center">
-                                    <div className="text-2xl font-bold text-blue-500">{wishShiftsCount}</div>
+                                    <div className="text-2xl font-bold text-blue-400">{wishShiftsCount}</div>
                                     <div className="text-xs text-muted-foreground">Gewünschte freie Schichten</div>
                                 </div>
                                 <div className="text-center">
@@ -297,7 +297,7 @@ export function WishesAndBlockedForm({
                                     <div className="text-xs text-muted-foreground">Blockierte Tage</div>
                                 </div>
                                 <div className="text-center">
-                                    <div className="text-2xl font-bold text-red-500">{blockedShiftsCount}</div>
+                                    <div className="text-2xl font-bold text-red-400">{blockedShiftsCount}</div>
                                     <div className="text-xs text-muted-foreground">Blockierte Schichten</div>
                                 </div>
                             </div>
