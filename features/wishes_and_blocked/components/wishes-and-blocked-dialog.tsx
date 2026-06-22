@@ -13,6 +13,8 @@ interface WishesAndBlockedDialogProps {
     isSubmitting?: boolean;
     excludedEmployeeKeys?: number[];
     isGlobal?: boolean;
+    caseId?: number;
+    monthYear?: string;
 }
 
 export function WishesAndBlockedDialog({
@@ -23,6 +25,8 @@ export function WishesAndBlockedDialog({
                                            isSubmitting,
                                            isGlobal,
                                            excludedEmployeeKeys = [],
+                                           caseId,
+                                           monthYear,
                                        }: WishesAndBlockedDialogProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -46,6 +50,8 @@ export function WishesAndBlockedDialog({
                             isSubmitting={isSubmitting}
                             excludedEmployeeKeys={excludedEmployeeKeys}
                             isGlobal={isGlobal}
+                            caseId={caseId}
+                            monthYear={monthYear}
                         />
                     </div>
                 </ScrollArea>

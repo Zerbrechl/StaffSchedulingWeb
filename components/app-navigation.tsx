@@ -22,8 +22,11 @@ export function AppNavigation({isLocked, lockedCaseId, lockedMonthYear}: AppNavi
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const caseId = searchParams.get('caseId');
+    const caseIds = searchParams.get('caseIds');
     const monthYear = searchParams.get('monthYear');
-    const caseSearch = caseId && monthYear ? `?caseId=${caseId}&monthYear=${monthYear}` : '';
+    const caseSearch = caseId && monthYear
+        ? `?caseId=${caseId}${caseIds ? `&caseIds=${caseIds}` : ''}&monthYear=${monthYear}`
+        : '';
 
     const isActive = (path: string) => {
         return pathname === path || pathname.startsWith(path + '/');

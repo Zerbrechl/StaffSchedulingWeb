@@ -1,25 +1,90 @@
 import {MinimalStaffPageClient} from './minimal-staff-page-client';
 import {getMinimalStaffAction} from '@/features/minimal-staff/minimal-staff.actions';
+import {listCasesAction} from '@/features/cases/cases.actions';
+import {CaseUnit} from '@/src/entities/models/case.model';
+import {MinimalStaffRequirements} from '@/src/entities/models/minimal-staff.model';
+
+interface MinimalStaffCaseData {
+    caseId: number;
+    requirements: MinimalStaffRequirements;
+}
+
+interface MinimalStaffCaseError {
+    caseId: number;
+    error: string;
+}
+
+type MinimalStaffResult =
+    | { caseId: number; requirements: MinimalStaffRequirements | null; error: null }
+    | { caseId: number; requirements: null; error: string };
+
+function getErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+}
 
 export default async function MinimalStaffPage({
                                                    searchParams,
                                                }: {
-    searchParams: Promise<{ caseId?: string; monthYear?: string }>;
+    searchParams: Promise<{ caseId?: string; caseIds?: string; monthYear?: string }>;
 }) {
-    const {caseId: caseIdStr, monthYear} = await searchParams;
+    const {caseId: caseIdStr, caseIds: caseIdsStr, monthYear} = await searchParams;
+    const rawCaseIds = caseIdsStr ?? caseIdStr ?? '';
+    const caseIds = Array.from(
+        new Set(
+            rawCaseIds
+                .split(',')
+                .map(id => Number(id))
+                .filter(id => Number.isInteger(id) && id > 0)
+        )
+    );
 
-    if (!caseIdStr || !monthYear) {
-        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case
+    if (!monthYear) {
+        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Monat
             aus</div>;
     }
 
-    const caseId = Number(caseIdStr);
-    if (isNaN(caseId) || caseId <= 0 || !/^(0?[1-9]|1[0-2])_\d{4}$/.test(monthYear)) {
-        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case
+    if (!/^(0?[1-9]|1[0-2])_\d{4}$/.test(monthYear)) {
+        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Monat
             aus</div>;
     }
 
-    const requirements = await getMinimalStaffAction(caseId, monthYear);
+    const {units} = await listCasesAction();
+    const availableCaseIds = units
+        .filter((unit: CaseUnit) => unit.months.includes(monthYear))
+        .map(unit => unit.unitId);
 
-    return <MinimalStaffPageClient caseId={caseId} monthYear={monthYear} requirements={requirements}/>;
+    const minimalStaffResults: MinimalStaffResult[] = await Promise.all(
+        caseIds.map(async caseId => {
+            try {
+                return {
+                    caseId,
+                    requirements: await getMinimalStaffAction(caseId, monthYear),
+                    error: null,
+                };
+            } catch (error) {
+                return {
+                    caseId,
+                    requirements: null,
+                    error: getErrorMessage(error),
+                };
+            }
+        })
+    );
+
+    const minimalStaffCases: MinimalStaffCaseData[] = minimalStaffResults
+        .filter((result): result is { caseId: number; requirements: MinimalStaffRequirements; error: null } => result.error === null)
+        .map(({caseId, requirements}) => ({caseId, requirements}));
+
+    const minimalStaffErrors: MinimalStaffCaseError[] = minimalStaffResults
+        .filter((result): result is { caseId: number; requirements: null; error: string } => result.error !== null)
+        .map(({caseId, error}) => ({caseId, error}));
+
+    return (
+        <MinimalStaffPageClient
+            monthYear={monthYear}
+            minimalStaffCases={minimalStaffCases}
+            minimalStaffErrors={minimalStaffErrors}
+            availableCaseIds={availableCaseIds}
+        />
+    );
 }

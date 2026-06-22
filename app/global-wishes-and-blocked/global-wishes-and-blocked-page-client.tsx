@@ -1,8 +1,10 @@
 'use client';
 
 import {useState, useTransition} from 'react';
+import {usePathname, useRouter, useSearchParams} from 'next/navigation';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
+import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
 import {Plus, Save, Upload} from 'lucide-react';
 import {WishesAndBlockedEmployee} from '@/src/entities/models/wishes-and-blocked.model';
 import {WishesAndBlockedList} from '@/features/wishes_and_blocked/components/wishes-and-blocked-list';
@@ -42,6 +44,25 @@ interface GlobalWishesAndBlockedPageClientProps {
     templates: TemplateSummary[];
 }
 
+interface GlobalWishesCaseData {
+    caseId: number;
+    employees: WishesAndBlockedEmployee[];
+    currentEmployees: Employee[];
+    templates: TemplateSummary[];
+}
+
+interface GlobalWishesCaseError {
+    caseId: number;
+    error: string;
+}
+
+interface GlobalWishesAndBlockedMultiCasePageClientProps {
+    monthYear: string;
+    globalWishesCases: GlobalWishesCaseData[];
+    globalWishesErrors: GlobalWishesCaseError[];
+    availableCaseIds: number[];
+}
+
 /**
  * Client component for managing *global* wishes and blocked periods.
  *
@@ -57,7 +78,7 @@ interface GlobalWishesAndBlockedPageClientProps {
  *  - currentEmployees: full directory of employees used to resolve keys
  *  - templates: summaries of available global-wishes templates for this case
  */
-export function GlobalWishesAndBlockedPageClient({
+function GlobalWishesAndBlockedCaseCard({
     caseId,
     monthYear,
     employees,
@@ -267,7 +288,7 @@ export function GlobalWishesAndBlockedPageClient({
                         <div>
                             <CardTitle>Globale Wünsche & Blockierungen</CardTitle>
                             <CardDescription>
-                                Verwalte monatsübergreifende freie und blockierte Tage und Schichten
+                                Case {caseId}: Verwalte monatsübergreifende freie und blockierte Tage und Schichten
                             </CardDescription>
                         </div>
                         <div className="flex gap-2">
@@ -311,6 +332,8 @@ export function GlobalWishesAndBlockedPageClient({
                 onSubmit={handleSubmit}
                 isSubmitting={isSubmitting}
                 isGlobal={true}
+                caseId={caseId}
+                monthYear={monthYear}
             />
 
             {/* Confirmation: save creates/edits a gw entry → resets mw */}
@@ -381,3 +404,91 @@ export function GlobalWishesAndBlockedPageClient({
     );
 }
 
+export function GlobalWishesAndBlockedPageClient({
+    monthYear,
+    globalWishesCases,
+    globalWishesErrors,
+    availableCaseIds,
+}: GlobalWishesAndBlockedMultiCasePageClientProps) {
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
+    const router = useRouter();
+
+    const visibleCaseIds = Array.from(
+        new Set(
+            (searchParams.get('caseIds') ?? searchParams.get('caseId') ?? '')
+                .split(',')
+                .map(id => Number(id))
+                .filter(id => Number.isInteger(id) && id > 0)
+        )
+    );
+    const sortedAvailableCaseIds = [...availableCaseIds].sort((a, b) => a - b);
+    const visibleErrors = globalWishesErrors.filter(({caseId}) => visibleCaseIds.includes(caseId));
+
+    const toggleCase = (caseId: number) => {
+        const nextCaseIds = visibleCaseIds.includes(caseId)
+            ? visibleCaseIds.filter(id => id !== caseId)
+            : [...visibleCaseIds, caseId];
+        const params = new URLSearchParams(searchParams.toString());
+        if (nextCaseIds.length > 0) {
+            params.set('caseIds', nextCaseIds.join(','));
+            params.set('caseId', String(nextCaseIds[0]));
+        } else {
+            params.delete('caseIds');
+            params.delete('caseId');
+        }
+        router.push(`${pathname}?${params.toString()}`);
+    };
+
+    return (
+        <div className="py-6 space-y-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Globale Wünsche & Blockierungen</CardTitle>
+                    <CardDescription>Wähle, welche Cases angezeigt werden sollen.</CardDescription>
+                    <div className="flex flex-wrap gap-2 pt-2">
+                        {sortedAvailableCaseIds.map(caseId => (
+                            <Button
+                                key={caseId}
+                                type="button"
+                                size="sm"
+                                variant={visibleCaseIds.includes(caseId) ? 'default' : 'outline'}
+                                onClick={() => toggleCase(caseId)}
+                            >
+                                Case {caseId}
+                            </Button>
+                        ))}
+                    </div>
+                </CardHeader>
+            </Card>
+
+            {visibleErrors.length > 0 && (
+                <Alert variant="destructive">
+                    <AlertTitle>Globale Wünsche konnten nicht geladen werden</AlertTitle>
+                    <AlertDescription>
+                        {visibleErrors.map(({caseId, error}) => (
+                            <div key={caseId}>Case {caseId}: {error}</div>
+                        ))}
+                    </AlertDescription>
+                </Alert>
+            )}
+
+            {visibleCaseIds.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">Wähle mindestens einen Case aus.</div>
+            ) : globalWishesCases.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">Keine globalen Wünsche gefunden.</div>
+            ) : (
+                globalWishesCases.map(({caseId, employees, currentEmployees, templates}) => (
+                    <GlobalWishesAndBlockedCaseCard
+                        key={caseId}
+                        caseId={caseId}
+                        monthYear={monthYear}
+                        employees={employees}
+                        currentEmployees={currentEmployees}
+                        templates={templates}
+                    />
+                ))
+            )}
+        </div>
+    );
+}

@@ -16,6 +16,8 @@ interface EmployeeSelectorProps {
     onSelect: (employee: Employee | null) => void;
     disabled?: boolean;
     excludedKeys?: number[]; // employee keys to exclude from the list
+    caseId?: number;
+    monthYear?: string;
 }
 
 export function EmployeeSelector({
@@ -23,13 +25,15 @@ export function EmployeeSelector({
                                      onSelect,
                                      disabled,
                                      excludedKeys = [],
+                                     caseId: caseIdProp,
+                                     monthYear: monthYearProp,
                                  }: EmployeeSelectorProps) {
     const [open, setOpen] = React.useState(false);
     const [employees, setEmployees] = React.useState<Employee[]>([]);
     const [isLoading, setIsLoading] = React.useState(true);
     const searchParams = useSearchParams();
-    const caseId = parseInt(searchParams.get('caseId') ?? '0', 10);
-    const monthYear = searchParams.get('monthYear') ?? '';
+    const caseId = caseIdProp ?? parseInt(searchParams.get('caseId') ?? '0', 10);
+    const monthYear = monthYearProp ?? searchParams.get('monthYear') ?? '';
 
     React.useEffect(() => {
         if (!caseId || !monthYear) return;
@@ -76,10 +80,10 @@ export function EmployeeSelector({
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[400px] p-0" align="start">
+            <PopoverContent className="w-[min(400px,calc(95vw-2rem))] p-0" align="start">
                 <Command>
                     <CommandInput placeholder="Mitarbeiter suchen..."/>
-                    <CommandList>
+                    <CommandList className="max-h-[40vh] overflow-y-auto overscroll-contain">
                         <CommandEmpty>Keine Mitarbeiter gefunden.</CommandEmpty>
                         <CommandGroup>
                             {displayEmployees.map((employee) => (

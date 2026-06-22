@@ -22,9 +22,17 @@ function getScheduleApiUrl(caseId: number, monthYear: string, endpoint: string) 
  */
 export async function getSchedulesMetadataDb(caseId: number, monthYear: string) {
     const url = getScheduleApiUrl(caseId, monthYear, '/schedules/metadata');
-    const response = await fetch(url, {cache: 'no-store'});
+    let data: SchedulesMetadata = {schedules: [], selectedScheduleId: null};
+
+    try {
+        const response = await fetch(url, {cache: 'no-store'});
+        data = response.ok ? await response.json() as SchedulesMetadata : {schedules: [], selectedScheduleId: null};
+    } catch {
+        data = {schedules: [], selectedScheduleId: null};
+    }
+
     const db = {
-        data: response.ok ? await response.json() as SchedulesMetadata : {schedules: [], selectedScheduleId: null},
+        data,
         async write() {
             await fetch(url, {
                 method: 'PUT',
@@ -48,9 +56,17 @@ export async function getSchedulesMetadataDb(caseId: number, monthYear: string) 
  */
 export async function getScheduleDb(caseId: number, monthYear: string, scheduleId: string) {
     const url = getScheduleApiUrl(caseId, monthYear, `/schedules/${scheduleId}`);
-    const response = await fetch(url, {cache: 'no-store'});
+    let data: ScheduleDatabase = {solution: null};
+
+    try {
+        const response = await fetch(url, {cache: 'no-store'});
+        data = response.ok ? await response.json() as ScheduleDatabase : {solution: null};
+    } catch {
+        data = {solution: null};
+    }
+
     const db = {
-        data: response.ok ? await response.json() as ScheduleDatabase : {solution: null},
+        data,
         async write() {
             await fetch(url, {
                 method: 'PUT',
@@ -70,7 +86,11 @@ export async function getScheduleDb(caseId: number, monthYear: string, scheduleI
  * @param scheduleId - The ID of the schedule to delete
  */
 export async function deleteSchedule(caseId: number, monthYear: string, scheduleId: string): Promise<void> {
-    await fetch(getScheduleApiUrl(caseId, monthYear, `/schedules/${scheduleId}`), {method: 'DELETE'});
+    try {
+        await fetch(getScheduleApiUrl(caseId, monthYear, `/schedules/${scheduleId}`), {method: 'DELETE'});
+    } catch {
+        // Keep old filesystem behavior: deleting a missing schedule is a no-op.
+    }
 }
 
 export async function saveLastInsertedDb(caseId: number, monthYear: string, solution: ScheduleSolutionRaw): Promise<void> {
@@ -82,11 +102,19 @@ export async function saveLastInsertedDb(caseId: number, monthYear: string, solu
 }
 
 export async function getLastInsertedDb(caseId: number, monthYear: string): Promise<ScheduleSolutionRaw | null> {
-    const response = await fetch(getScheduleApiUrl(caseId, monthYear, '/schedules/last-inserted'), {cache: 'no-store'});
+    try {
+        const response = await fetch(getScheduleApiUrl(caseId, monthYear, '/schedules/last-inserted'), {cache: 'no-store'});
 
-    return response.ok ? await response.json() as ScheduleSolutionRaw : null;
+        return response.ok ? await response.json() as ScheduleSolutionRaw : null;
+    } catch {
+        return null;
+    }
 }
 
 export async function clearLastInsertedDb(caseId: number, monthYear: string): Promise<void> {
-    await fetch(getScheduleApiUrl(caseId, monthYear, '/schedules/last-inserted'), {method: 'DELETE'});
+    try {
+        await fetch(getScheduleApiUrl(caseId, monthYear, '/schedules/last-inserted'), {method: 'DELETE'});
+    } catch {
+        // Keep old filesystem behavior: clearing a missing marker is a no-op.
+    }
 }

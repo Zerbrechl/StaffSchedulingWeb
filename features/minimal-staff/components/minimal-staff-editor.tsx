@@ -40,6 +40,7 @@ interface MinimalStaffEditorProps {
     requirements: MinimalStaffRequirements;
     onSave: (requirements: MinimalStaffRequirements) => void;
     isSaving?: boolean;
+    caseId?: number;
 }
 
 const weekDays: { key: WeekDay; label: string; isWeekend: boolean }[] = [
@@ -79,9 +80,9 @@ const categories: { key: EmployeeCategory; label: string; color: string; descrip
     },
 ];
 
-export function MinimalStaffEditor({requirements, onSave, isSaving}: MinimalStaffEditorProps) {
+export function MinimalStaffEditor({requirements, onSave, isSaving, caseId: caseIdProp}: MinimalStaffEditorProps) {
     const searchParams = useSearchParams();
-    const caseId = parseInt(searchParams.get('caseId') ?? '0', 10);
+    const caseId = caseIdProp ?? parseInt(searchParams.get('caseId') ?? '0', 10);
     const [localRequirements, setLocalRequirements] = useState<MinimalStaffRequirements>(requirements);
     const [hasChanges, setHasChanges] = useState(false);
     const [saveDialogOpen, setSaveDialogOpen] = useState(false);

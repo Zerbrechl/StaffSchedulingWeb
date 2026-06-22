@@ -1,25 +1,90 @@
 import {WeightsPageClient} from './weights-page-client';
 import {getWeightsAction} from '@/features/weights/weights.actions';
+import {listCasesAction} from '@/features/cases/cases.actions';
+import {CaseUnit} from '@/src/entities/models/case.model';
+import {Weights} from '@/src/entities/models/weights.model';
+
+interface WeightsCaseData {
+    caseId: number;
+    weights: Weights;
+}
+
+interface WeightsCaseError {
+    caseId: number;
+    error: string;
+}
+
+type WeightsResult =
+    | { caseId: number; weights: Weights | null; error: null }
+    | { caseId: number; weights: null; error: string };
+
+function getErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+}
 
 export default async function WeightsPage({
                                               searchParams,
                                           }: {
-    searchParams: Promise<{ caseId?: string; monthYear?: string }>;
+    searchParams: Promise<{ caseId?: string; caseIds?: string; monthYear?: string }>;
 }) {
-    const {caseId: caseIdStr, monthYear} = await searchParams;
+    const {caseId: caseIdStr, caseIds: caseIdsStr, monthYear} = await searchParams;
+    const rawCaseIds = caseIdsStr ?? caseIdStr ?? '';
+    const caseIds = Array.from(
+        new Set(
+            rawCaseIds
+                .split(',')
+                .map(id => Number(id))
+                .filter(id => Number.isInteger(id) && id > 0)
+        )
+    );
 
-    if (!caseIdStr || !monthYear) {
-        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case
+    if (!monthYear) {
+        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Monat
             aus</div>;
     }
 
-    const caseId = Number(caseIdStr);
-    if (isNaN(caseId) || caseId <= 0 || !/^(0?[1-9]|1[0-2])_\d{4}$/.test(monthYear)) {
-        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case
+    if (!/^(0?[1-9]|1[0-2])_\d{4}$/.test(monthYear)) {
+        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Monat
             aus</div>;
     }
 
-    const weights = await getWeightsAction(caseId, monthYear);
+    const {units} = await listCasesAction();
+    const availableCaseIds = units
+        .filter((unit: CaseUnit) => unit.months.includes(monthYear))
+        .map(unit => unit.unitId);
 
-    return <WeightsPageClient caseId={caseId} monthYear={monthYear} weights={weights}/>;
+    const weightsResults: WeightsResult[] = await Promise.all(
+        caseIds.map(async caseId => {
+            try {
+                return {
+                    caseId,
+                    weights: await getWeightsAction(caseId, monthYear),
+                    error: null,
+                };
+            } catch (error) {
+                return {
+                    caseId,
+                    weights: null,
+                    error: getErrorMessage(error),
+                };
+            }
+        })
+    );
+
+    const weightsCases: WeightsCaseData[] = weightsResults
+        .filter((result): result is { caseId: number; weights: Weights; error: null } => result.error === null)
+        .map(({caseId, weights}) => ({caseId, weights}));
+
+    const weightsErrors: WeightsCaseError[] = weightsResults
+        .filter((result): result is { caseId: number; weights: null; error: string } => result.error !== null)
+        .map(({caseId, error}) => ({caseId, error}));
+
+    return (
+        <WeightsPageClient
+            monthYear={monthYear}
+            weightsCases={weightsCases}
+            weightsErrors={weightsErrors}
+            availableCaseIds={availableCaseIds}
+        />
+    );
 }

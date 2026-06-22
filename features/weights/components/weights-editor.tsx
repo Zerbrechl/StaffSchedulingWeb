@@ -32,15 +32,16 @@ interface WeightsEditorProps {
     weights: Weights;
     onSave: (weights: Weights) => void;
     isSaving?: boolean;
+    caseId?: number;
 }
 
 /**
  * Component for editing solver weight configurations.
  * Provides numeric inputs (no fixed min/max) for all weight values.
  */
-export function WeightsEditor({weights, onSave, isSaving}: WeightsEditorProps) {
+export function WeightsEditor({weights, onSave, isSaving, caseId: caseIdProp}: WeightsEditorProps) {
     const searchParams = useSearchParams();
-    const caseId = parseInt(searchParams.get('caseId') ?? '0', 10);
+    const caseId = caseIdProp ?? parseInt(searchParams.get('caseId') ?? '0', 10);
     const [editedWeights, setEditedWeights] = useState<Weights>(weights);
     const [saveDialogOpen, setSaveDialogOpen] = useState(false);
     const [importDialogOpen, setImportDialogOpen] = useState(false);

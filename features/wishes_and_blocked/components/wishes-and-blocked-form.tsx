@@ -30,6 +30,8 @@ interface WishesAndBlockedFormProps {
     isSubmitting?: boolean;
     excludedEmployeeKeys?: number[];
     isGlobal?: boolean;
+    caseId?: number;
+    monthYear?: string;
 }
 
 // Helper to convert WishesAndBlockedEmployee data to DayData format
@@ -160,9 +162,11 @@ export function WishesAndBlockedForm({
                                          isSubmitting,
                                          excludedEmployeeKeys = [],
                                          isGlobal,
+                                         caseId,
+                                         monthYear,
                                      }: WishesAndBlockedFormProps) {
     const searchParams = useSearchParams();
-    const monthYearStr = searchParams.get('monthYear') ?? '';
+    const monthYearStr = monthYear ?? searchParams.get('monthYear') ?? '';
     const {month: urlMonth, year: urlYear} = monthYearStr
         ? parseMonthYear(monthYearStr)
         : {month: new Date().getMonth() + 1, year: new Date().getFullYear()};
@@ -270,6 +274,8 @@ export function WishesAndBlockedForm({
                                                 onSelect={handleEmployeeSelect}
                                                 disabled={!!employee || isSubmitting}
                                                 excludedKeys={employee ? [] : excludedEmployeeKeys}
+                                                caseId={caseId}
+                                                monthYear={monthYearStr}
                                             />
                                         </FormControl>
                                         {employee && (
