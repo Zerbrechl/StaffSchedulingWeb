@@ -88,12 +88,12 @@ export function WishesAndBlockedList({
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex items-center gap-2">
                                                     <Heart className="h-4 w-4 text-blue-500"/>
-                                                    <Badge variant="outline" className="bg-blue-50">
+                                                    <Badge variant="outline" className="bg-blue-100">
                                                         {employee.wish_days.length} Gewünschte freie Tage
                                                     </Badge>
                                                 </div>
 
-                                                <Badge variant="outline" className="bg-blue-100 ml-6">
+                                                <Badge variant="outline" className="bg-blue-50 ml-6">
                                                     {employee.wish_shifts.length} Gewünschte freie Schichten
                                                 </Badge>
 
@@ -103,12 +103,12 @@ export function WishesAndBlockedList({
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex items-center gap-2">
                                                     <Ban className="h-4 w-4 text-red-500"/>
-                                                    <Badge variant="outline" className="bg-red-50">
+                                                    <Badge variant="outline" className="bg-red-100">
                                                         {employee.blocked_days.length} Blockierte Tage
                                                     </Badge>
                                                 </div>
 
-                                                <Badge variant="outline" className="bg-red-100 ml-6">
+                                                <Badge variant="outline" className="bg-red-50 ml-6">
                                                     {employee.blocked_shifts.length} Blockierte Schichten
                                                 </Badge>
                                             </div>
