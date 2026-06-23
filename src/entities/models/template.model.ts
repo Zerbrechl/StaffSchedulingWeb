@@ -1,7 +1,8 @@
 import {z} from 'zod';
 import {WishesAndBlockedEmployeeSchema} from './wishes-and-blocked.model';
+import {AvailabilityEmployeeSchema} from './availability.model';
 
-export const TemplateTypeSchema = z.enum(['weights', 'minimal-staff', 'global-wishes']);
+export const TemplateTypeSchema = z.enum(['weights', 'minimal-staff', 'global-wishes', 'availability']);
 export type TemplateType = z.infer<typeof TemplateTypeSchema>;
 
 export const TemplateMetadataSchema = z.object({
@@ -62,3 +63,16 @@ export const GlobalWishesTemplateContentSchema = z.object({
 });
 
 export type GlobalWishesTemplateContent = z.infer<typeof GlobalWishesTemplateContentSchema>;
+
+export const AvailabilityTemplateMetadataSchema = TemplateMetadataSchema.extend({
+    employeeCount: z.number(),
+    employeeIds: z.array(z.number()),
+});
+
+export type AvailabilityTemplateMetadata = z.infer<typeof AvailabilityTemplateMetadataSchema>;
+
+export const AvailabilityTemplateContentSchema = z.object({
+    employees: z.array(AvailabilityEmployeeSchema),
+});
+
+export type AvailabilityTemplateContent = z.infer<typeof AvailabilityTemplateContentSchema>;

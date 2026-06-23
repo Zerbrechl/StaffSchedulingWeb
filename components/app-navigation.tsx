@@ -6,7 +6,7 @@ import {MonthSelector} from '@/components/month-selector';
 import {Separator} from '@/components/ui/separator';
 import {Button} from '@/components/ui/button';
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,} from '@/components/ui/dropdown-menu';
-import {Briefcase, Calendar, ChevronDown, Cog, FileText, Heart, Scale, UserCog} from 'lucide-react';
+import {Briefcase, Calendar, CalendarCheck, ChevronDown, Cog, FileText, Heart, Scale, UserCog} from 'lucide-react';
 import {cn} from '@/lib/utils';
 // This wrapper is required because AppNavigation uses useSearchParams, a client hook.
 // During SSR/prerendering it must be rendered inside a Suspense boundary.
@@ -88,6 +88,39 @@ export function AppNavigation({isLocked, lockedCaseId, lockedMonthYear}: AppNavi
                                           className="flex items-center gap-2 cursor-pointer">
                                         <Heart className="h-4 w-4"/>
                                         Wünsche diesen Monat
+                                    </Link>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        {/* Availability dropdown */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    className={cn(
+                                        'gap-1',
+                                        (isActive('/global-availability') || isActive('/availability')) && 'bg-accent'
+                                    )}
+                                >
+                                    <CalendarCheck className="h-4 w-4"/>
+                                    <span>Availability</span>
+                                    <ChevronDown className="h-3 w-3"/>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                                <DropdownMenuItem asChild>
+                                    <Link href={`/global-availability${caseSearch}`}
+                                          className="flex items-center gap-2 cursor-pointer">
+                                        <CalendarCheck className="h-4 w-4"/>
+                                        Global Availability
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link href={`/availability${caseSearch}`}
+                                          className="flex items-center gap-2 cursor-pointer">
+                                        <CalendarCheck className="h-4 w-4"/>
+                                        Availability für den Monat
                                     </Link>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -195,6 +228,13 @@ export function AppNavigation({isLocked, lockedCaseId, lockedMonthYear}: AppNavi
                                           className="flex items-center gap-2 cursor-pointer">
                                         <UserCog className="h-4 w-4"/>
                                         Mindestbesetzung-Templates
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link href={`/templates/availability${caseSearch}`}
+                                          className="flex items-center gap-2 cursor-pointer">
+                                        <CalendarCheck className="h-4 w-4"/>
+                                        Availability-Templates
                                     </Link>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>

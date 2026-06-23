@@ -13,6 +13,8 @@ import {createSolverModule} from '@/di/modules/solver.module';
 import {createWeightsTemplatesModule} from '@/di/modules/weights-templates.module';
 import {createMinimalStaffTemplatesModule} from '@/di/modules/minimal-staff-templates.module';
 import {createGlobalWishesTemplatesModule} from '@/di/modules/global-wishes-templates.module';
+import {createAvailabilityModule} from '@/di/modules/availability.module';
+import {createGlobalAvailabilityModule} from '@/di/modules/global-availability.module';
 
 const ApplicationContainer = createContainer();
 
@@ -21,6 +23,8 @@ ApplicationContainer.load(Symbol('WeightsModule'), createWeightsModule());
 ApplicationContainer.load(Symbol('MinimalStaffModule'), createMinimalStaffModule());
 ApplicationContainer.load(Symbol('WishesAndBlockedModule'), createWishesAndBlockedModule());
 ApplicationContainer.load(Symbol('GlobalWishesModule'), createGlobalWishesModule());
+ApplicationContainer.load(Symbol('AvailabilityModule'), createAvailabilityModule());
+ApplicationContainer.load(Symbol('GlobalAvailabilityModule'), createGlobalAvailabilityModule());
 ApplicationContainer.load(Symbol('SchedulesModule'), createSchedulesModule());
 ApplicationContainer.load(Symbol('JobsModule'), createJobsModule());
 ApplicationContainer.load(Symbol('CasesModule'), createCasesModule());

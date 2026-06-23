@@ -3,6 +3,7 @@ export * from './employee.model';
 export * from './weights.model';
 export * from './minimal-staff.model';
 export * from './wishes-and-blocked.model';
+export * from './availability.model';
 export * from './schedule.model';
 export * from './solver.model';
 export * from './template.model';
