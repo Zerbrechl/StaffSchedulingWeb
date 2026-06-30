@@ -1,4 +1,4 @@
-import {getDaysByWeekday} from '@/lib/services/global-to-current-wishes-converter';
+import {generateMonthlyAvailabilityFromWeeklyData} from '@/lib/services/global-to-current-wishes-converter';
 import {IAvailabilityRepository} from '@/src/application/ports/availability.repository';
 import {AvailabilityEmployee} from '@/src/entities/models/availability.model';
 import {getAvailabilityDb} from '@/src/infrastructure/persistence/lowdb/availability.db';
@@ -45,36 +45,24 @@ export class LowdbAvailabilityRepository implements IAvailabilityRepository {
         const [monthStr, yearStr] = monthYear.split('_');
         const month = parseInt(monthStr, 10);
         const year = parseInt(yearStr, 10);
-        const daysByWeekday = getDaysByWeekday(year, month);
-        const availableDays = new Set<number>();
-        const unavailableDays = new Set<number>();
-
-        globalEntry.availability_days.forEach((weekday) => {
-            if (weekday >= 1 && weekday <= 7) {
-                daysByWeekday[weekday - 1].forEach(day => availableDays.add(day));
-            }
-        });
-
-        globalEntry.unavailability_days?.forEach((weekday) => {
-            if (weekday >= 1 && weekday <= 7) {
-                daysByWeekday[weekday - 1].forEach(day => unavailableDays.add(day));
-            }
-        });
-
-        const monthlyEntry: AvailabilityEmployee = {
-            key: globalEntry.key,
-            firstname: globalEntry.firstname,
-            name: globalEntry.name,
-            availability_days: Array.from(availableDays).sort((a, b) => a - b),
-            unavailability_days: Array.from(unavailableDays).sort((a, b) => a - b),
-        };
+        const monthlyData = generateMonthlyAvailabilityFromWeeklyData(globalEntry, year, month);
 
         const db = await getAvailabilityDb(caseId, monthYear);
         const index = db.data.employees.findIndex((e) => e.key === globalEntry.key);
         if (index === -1) {
-            db.data.employees.push(monthlyEntry);
+            db.data.employees.push({
+                key: globalEntry.key,
+                firstname: globalEntry.firstname,
+                name: globalEntry.name,
+                availability_days: monthlyData.availability_days,
+                unavailability_days: monthlyData.unavailability_days,
+            });
         } else {
-            db.data.employees[index] = monthlyEntry;
+            db.data.employees[index] = {
+                ...db.data.employees[index],
+                availability_days: monthlyData.availability_days,
+                unavailability_days: monthlyData.unavailability_days,
+            };
         }
         await db.write();
     }
