@@ -5,6 +5,7 @@ export const AvailabilityEmployeeSchema = z.object({
     firstname: z.string(),
     name: z.string(),
     availability_days: z.array(z.number()),
+    unavailability_days: z.array(z.number()).optional().default([]),
 });
 
 export type AvailabilityEmployee = z.infer<typeof AvailabilityEmployeeSchema>;

@@ -11,6 +11,7 @@ import {Calendar as CalendarIcon, User} from 'lucide-react';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {EmployeeSelector} from '@/components/employee-selector';
 import {parseMonthYear} from '@/lib/utils/case-utils';
+import {DayData, InteractiveCalendar} from '@/components/InteractiveCalendar';
 import type {Employee} from '@/src/entities/models/employee.model';
 import type {AvailabilityEmployee} from '@/src/entities/models/availability.model';
 
@@ -33,25 +34,56 @@ interface AvailabilityFormProps {
     monthYear?: string;
 }
 
-const weekDays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
-const monthNames = [
-    'Januar',
-    'Februar',
-    'März',
-    'April',
-    'Mai',
-    'Juni',
-    'Juli',
-    'August',
-    'September',
-    'Oktober',
-    'November',
-    'Dezember',
-];
+function convertToDayData(
+    year: number,
+    month: number,
+    availableDays: number[],
+    unavailableDays: number[]
+): DayData[] {
+    const dayDataMap = new Map<number, DayData>();
 
-function getFirstDayOfMonth(month: number, year: number) {
-    const day = new Date(year, month - 1, 1).getDay();
-    return day === 0 ? 6 : day - 1;
+    availableDays.forEach((day) => {
+        const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        dayDataMap.set(day, {
+            date,
+            categoryId: 'available',
+            events: [],
+        });
+    });
+
+    unavailableDays.forEach((day) => {
+        const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        dayDataMap.set(day, {
+            date,
+            categoryId: 'unavailable',
+            events: [],
+        });
+    });
+
+    return Array.from(dayDataMap.values());
+}
+
+function convertFromDayData(dayData: DayData[]): {
+    availableDays: number[];
+    unavailableDays: number[];
+} {
+    const availableDays: number[] = [];
+    const unavailableDays: number[] = [];
+
+    dayData.forEach((data) => {
+        const day = parseInt(data.date.split('-')[2], 10);
+
+        if (data.categoryId === 'available') {
+            availableDays.push(day);
+        } else if (data.categoryId === 'unavailable') {
+            unavailableDays.push(day);
+        }
+    });
+
+    availableDays.sort((a, b) => a - b);
+    unavailableDays.sort((a, b) => a - b);
+
+    return {availableDays, unavailableDays};
 }
 
 export function AvailabilityForm({
@@ -89,11 +121,20 @@ export function AvailabilityForm({
     const month = urlMonth;
     const daysInMonth = new Date(year, month, 0).getDate();
     const dayCount = isGlobal ? 7 : daysInMonth;
-    const [selectedDays, setSelectedDays] = useState<number[]>(() =>
-        employee
-            ? [...employee.availability_days].sort((a, b) => a - b)
-            : Array.from({length: dayCount}, (_, index) => index + 1)
+    const [calendarData, setCalendarData] = useState<DayData[]>(() =>
+        convertToDayData(
+            year,
+            month,
+            employee?.availability_days || [],
+            employee?.unavailability_days || []
+        )
     );
+    const {availableDays, unavailableDays} = convertFromDayData(calendarData);
+    const neutralDaysCount = dayCount - availableDays.length - unavailableDays.length;
+    const dayCategories = [
+        {id: 'available', name: 'Verfügbar', color: '#bbf7d0'},
+        {id: 'unavailable', name: 'Nicht verfügbar', color: '#fecaca'},
+    ];
 
     const handleFormSubmit = () => {
         if (!selectedEmployee) return;
@@ -102,7 +143,8 @@ export function AvailabilityForm({
             key: selectedEmployee.key,
             firstname: selectedEmployee.firstname,
             name: selectedEmployee.name,
-            availability_days: selectedDays,
+            availability_days: availableDays,
+            unavailability_days: unavailableDays,
         });
     };
 
@@ -110,19 +152,6 @@ export function AvailabilityForm({
         setSelectedEmployee(emp);
         form.setValue('employeeKey', emp?.key || 0);
     };
-
-    const toggleDay = (day: number) => {
-        setSelectedDays((current) => {
-            const next = current.includes(day)
-                ? current.filter((value) => value !== day)
-                : Array.from(new Set([...current, day]));
-
-            return next.sort((a, b) => a - b);
-        });
-    };
-
-    const leadingEmptyDays = isGlobal ? 0 : getFirstDayOfMonth(month, year);
-    const calendarDays = Array.from({length: dayCount}, (_, index) => index + 1);
 
     return (
         <Form {...form}>
@@ -165,10 +194,18 @@ export function AvailabilityForm({
                                 )}
                             />
 
-                            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t">
                                 <div className="text-center">
-                                    <div className="text-2xl font-bold text-green-600">{selectedDays.length}</div>
+                                    <div className="text-2xl font-bold text-green-600">{availableDays.length}</div>
                                     <div className="text-xs text-muted-foreground">Verfügbare Tage</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-2xl font-bold text-red-600">{unavailableDays.length}</div>
+                                    <div className="text-xs text-muted-foreground">Nicht verfügbare Tage</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-2xl font-bold text-slate-500">{neutralDaysCount}</div>
+                                    <div className="text-xs text-muted-foreground">Neutrale Tage</div>
                                 </div>
                             </div>
                         </CardContent>
@@ -185,54 +222,18 @@ export function AvailabilityForm({
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-center">
-                                        {isGlobal ? 'Musterwoche' : `${monthNames[month - 1]} ${year}`}
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="grid grid-cols-7 gap-2">
-                                        {weekDays.map((day) => (
-                                            <div key={day} className="text-center p-2 font-medium">
-                                                {day}
-                                            </div>
-                                        ))}
-
-                                        {Array.from({length: leadingEmptyDays}, (_, index) => (
-                                            <div
-                                                key={`empty-${index}`}
-                                                className="border rounded-lg p-2 text-left relative min-h-24 flex flex-col opacity-30 bg-gray-50"
-                                            />
-                                        ))}
-
-                                        {calendarDays.map((day) => {
-                                            const selected = selectedDays.includes(day);
-
-                                            return (
-                                                <button
-                                                    key={day}
-                                                    type="button"
-                                                    onClick={() => toggleDay(day)}
-                                                    disabled={isSubmitting}
-                                                    className={[
-                                                        'border rounded-lg p-2 text-left relative min-h-24 flex flex-col transition-colors',
-                                                        selected
-                                                            ? 'border-green-500 bg-green-200 text-green-950'
-                                                            : 'hover:border-gray-400 bg-transparent',
-                                                    ].join(' ')}
-                                                >
-                                                    <div className="mb-1">{isGlobal ? weekDays[day - 1] : day}</div>
-                                                    {selected && (
-                                                        <div className="text-xs mt-auto pt-1 truncate opacity-80">
-                                                        </div>
-                                                    )}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </CardContent>
-                            </Card>
+                            <InteractiveCalendar
+                                month={month}
+                                year={year}
+                                categories={dayCategories}
+                                eventCategories={[]}
+                                initialDayData={calendarData}
+                                onDayDataChange={setCalendarData}
+                                showLegend={true}
+                                showCategoryTitle={false}
+                                view={isGlobal ? 'week' : 'month'}
+                                allowedEventTitles={[]}
+                            />
                         </CardContent>
                     </Card>
                 </div>

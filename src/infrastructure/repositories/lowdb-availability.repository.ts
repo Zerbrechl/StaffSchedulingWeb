@@ -46,11 +46,18 @@ export class LowdbAvailabilityRepository implements IAvailabilityRepository {
         const month = parseInt(monthStr, 10);
         const year = parseInt(yearStr, 10);
         const daysByWeekday = getDaysByWeekday(year, month);
-        const days = new Set<number>();
+        const availableDays = new Set<number>();
+        const unavailableDays = new Set<number>();
 
         globalEntry.availability_days.forEach((weekday) => {
             if (weekday >= 1 && weekday <= 7) {
-                daysByWeekday[weekday - 1].forEach(day => days.add(day));
+                daysByWeekday[weekday - 1].forEach(day => availableDays.add(day));
+            }
+        });
+
+        globalEntry.unavailability_days?.forEach((weekday) => {
+            if (weekday >= 1 && weekday <= 7) {
+                daysByWeekday[weekday - 1].forEach(day => unavailableDays.add(day));
             }
         });
 
@@ -58,7 +65,8 @@ export class LowdbAvailabilityRepository implements IAvailabilityRepository {
             key: globalEntry.key,
             firstname: globalEntry.firstname,
             name: globalEntry.name,
-            availability_days: Array.from(days).sort((a, b) => a - b),
+            availability_days: Array.from(availableDays).sort((a, b) => a - b),
+            unavailability_days: Array.from(unavailableDays).sort((a, b) => a - b),
         };
 
         const db = await getAvailabilityDb(caseId, monthYear);

@@ -191,8 +191,13 @@ export function AvailabilityTemplatesPageClient({caseId, templates}: Availabilit
                                                 <div className="font-medium">{employee.firstname} {employee.name}</div>
                                                 <Badge variant="outline" className="text-xs">ID: {employee.key}</Badge>
                                             </div>
-                                            <div className="text-sm text-muted-foreground">
-                                                Tage: {employee.availability_days.length > 0 ? employee.availability_days.join(', ') : 'Keine'}
+                                            <div className="space-y-1 text-sm text-muted-foreground">
+                                                <div>
+                                                    Verfügbar: {employee.availability_days.length > 0 ? employee.availability_days.join(', ') : 'Keine'}
+                                                </div>
+                                                <div>
+                                                    Nicht verfügbar: {(employee.unavailability_days?.length ?? 0) > 0 ? employee.unavailability_days?.join(', ') : 'Keine'}
+                                                </div>
                                             </div>
                                         </div>
                                     ))}

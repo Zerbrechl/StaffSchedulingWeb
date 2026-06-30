@@ -181,6 +181,7 @@ function GlobalAvailabilityCaseCard({caseId, monthYear, employees, templates}: G
                         }}
                         onDelete={setConfirmDeleteId}
                         isDeleting={isDeleting}
+                        dayCount={7}
                     />
                 </CardContent>
             </Card>

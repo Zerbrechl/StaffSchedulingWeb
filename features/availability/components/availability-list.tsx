@@ -1,7 +1,7 @@
 'use client';
 
 import {useMemo, useState} from 'react';
-import {CalendarCheck, Pencil, Search, Trash2} from 'lucide-react';
+import {CalendarCheck, CalendarX, Minus, Pencil, Search, Trash2} from 'lucide-react';
 import {Badge} from '@/components/ui/badge';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
@@ -13,9 +13,10 @@ interface AvailabilityListProps {
     onEdit: (employee: AvailabilityEmployee) => void;
     onDelete: (id: number) => void;
     isDeleting?: boolean;
+    dayCount?: number;
 }
 
-export function AvailabilityList({employees, onEdit, onDelete, isDeleting}: AvailabilityListProps) {
+export function AvailabilityList({employees, onEdit, onDelete, isDeleting, dayCount}: AvailabilityListProps) {
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredEmployees = useMemo(() => {
@@ -64,45 +65,66 @@ export function AvailabilityList({employees, onEdit, onDelete, isDeleting}: Avai
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredEmployees.map((employee) => (
-                                <TableRow key={employee.key}>
-                                    <TableCell className="font-medium">
-                                        <div className="flex flex-col">
-                                            <span>{employee.firstname} {employee.name}</span>
-                                            <span className="text-xs text-muted-foreground">ID: {employee.key}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-col gap-1">
-                                            <div className="flex items-center gap-2">
-                                                <CalendarCheck className="h-4 w-4 text-green-500"/>
-                                                <Badge variant="outline" className="bg-green-100">
-                                                    {employee.availability_days.length} Verfügbare Tage
-                                                </Badge>
+                            {filteredEmployees.map((employee) => {
+                                const unavailableDayCount = employee.unavailability_days?.length ?? 0;
+                                const neutralDayCount = dayCount === undefined
+                                    ? undefined
+                                    : Math.max(0, dayCount - employee.availability_days.length - unavailableDayCount);
+
+                                return (
+                                    <TableRow key={employee.key}>
+                                        <TableCell className="font-medium">
+                                            <div className="flex flex-col">
+                                                <span>{employee.firstname} {employee.name}</span>
+                                                <span className="text-xs text-muted-foreground">ID: {employee.key}</span>
                                             </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-right space-x-2">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => onEdit(employee)}
-                                            title="Bearbeiten"
-                                        >
-                                            <Pencil className="h-4 w-4"/>
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => onDelete(employee.key)}
-                                            disabled={isDeleting}
-                                            title="Löschen"
-                                        >
-                                            <Trash2 className="h-4 w-4"/>
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex items-center gap-2">
+                                                    <CalendarCheck className="h-4 w-4 text-green-500"/>
+                                                    <Badge variant="outline" className="bg-green-100">
+                                                        {employee.availability_days.length} Verfügbare Tage
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <CalendarX className="h-4 w-4 text-red-500"/>
+                                                    <Badge variant="outline" className="bg-red-100">
+                                                        {unavailableDayCount} Nicht verfügbare Tage
+                                                    </Badge>
+                                                </div>
+                                                {neutralDayCount !== undefined && (
+                                                    <div className="flex items-center gap-2">
+                                                        <Minus className="h-4 w-4 text-slate-500"/>
+                                                        <Badge variant="outline">
+                                                            {neutralDayCount} Neutrale Tage
+                                                        </Badge>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-right space-x-2">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => onEdit(employee)}
+                                                title="Bearbeiten"
+                                            >
+                                                <Pencil className="h-4 w-4"/>
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => onDelete(employee.key)}
+                                                disabled={isDeleting}
+                                                title="Löschen"
+                                            >
+                                                <Trash2 className="h-4 w-4"/>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
                         </TableBody>
                     </Table>
                 </div>

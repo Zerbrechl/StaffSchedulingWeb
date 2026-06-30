@@ -14,6 +14,7 @@ import {
     deleteAvailabilityAction,
     updateAvailabilityAction,
 } from '@/features/availability/availability.actions';
+import {parseMonthYear} from '@/lib/utils/case-utils';
 import type {AvailabilityEmployee} from '@/src/entities/models/availability.model';
 
 interface AvailabilityCaseData {
@@ -47,6 +48,8 @@ function AvailabilityCaseCard({caseId, monthYear, employees}: AvailabilityCaseCa
 
     // Get list of employee keys that already have availability
     const existingEmployeeKeys = employees.map(employee => employee.key);
+    const {month, year} = parseMonthYear(monthYear);
+    const dayCount = new Date(year, month, 0).getDate();
 
     const handleCreate = () => {
         setEditingEmployee(undefined);
@@ -109,6 +112,7 @@ function AvailabilityCaseCard({caseId, monthYear, employees}: AvailabilityCaseCa
                         onEdit={handleEdit}
                         onDelete={handleDelete}
                         isDeleting={isDeleting}
+                        dayCount={dayCount}
                     />
                 </CardContent>
             </Card>
