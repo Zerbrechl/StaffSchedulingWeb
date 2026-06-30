@@ -2,7 +2,7 @@
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
-import {ArrowRight, FileText, Heart, Scale, UserCog} from 'lucide-react';
+import {ArrowRight, CalendarCheck, FileText, Heart, Scale, UserCog} from 'lucide-react';
 import Link from 'next/link';
 
 interface TemplatesPageClientProps {
@@ -36,6 +36,14 @@ export function TemplatesPageClient({caseId, monthYear}: TemplatesPageClientProp
             description: 'Wiederverwendbare Mindestbesetzungskonfigurationen pro Kategorie, Wochentag und Schicht',
             icon: UserCog,
             href: `/templates/minimal-staff${searchStr}`,
+            available: true,
+        },
+        {
+            type: 'availability',
+            title: 'Availability-Templates',
+            description: 'Wiederverwendbare globale Availability-Konfigurationen',
+            icon: CalendarCheck,
+            href: `/templates/availability${searchStr}`,
             available: true,
         },
     ];

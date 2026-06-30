@@ -4,6 +4,8 @@ import type {IWeightsRepository} from '@/src/application/ports/weights.repositor
 import type {IMinimalStaffRepository} from '@/src/application/ports/minimal-staff.repository';
 import type {IWishesAndBlockedRepository} from '@/src/application/ports/wishes-and-blocked.repository';
 import type {IGlobalWishesAndBlockedRepository} from '@/src/application/ports/global-wishes-and-blocked.repository';
+import type {IAvailabilityRepository} from '@/src/application/ports/availability.repository';
+import type {IGlobalAvailabilityRepository} from '@/src/application/ports/global-availability.repository';
 import type {IGlobalWishesTemplateRepository} from '@/src/application/ports/global-wishes-template.repository';
 import type {IScheduleRepository} from '@/src/application/ports/schedule.repository';
 import type {IJobRepository} from '@/src/application/ports/job.repository';
@@ -40,6 +42,28 @@ import type {IDeleteGlobalWishesUseCase} from '@/src/application/use-cases/globa
 import type {
     IImportGlobalWishesTemplateUseCase
 } from '@/src/application/use-cases/global-wishes/import-global-wishes-template.use-case';
+import type {IGetAllAvailabilityUseCase} from '@/src/application/use-cases/availability/get-all-availability.use-case';
+import type {
+    IGetAvailabilityByKeyUseCase
+} from '@/src/application/use-cases/availability/get-availability-by-key.use-case';
+import type {ICreateAvailabilityUseCase} from '@/src/application/use-cases/availability/create-availability.use-case';
+import type {IUpdateAvailabilityUseCase} from '@/src/application/use-cases/availability/update-availability.use-case';
+import type {IDeleteAvailabilityUseCase} from '@/src/application/use-cases/availability/delete-availability.use-case';
+import type {
+    IGetAllGlobalAvailabilityUseCase
+} from '@/src/application/use-cases/global-availability/get-all-global-availability.use-case';
+import type {
+    IGetGlobalAvailabilityByKeyUseCase
+} from '@/src/application/use-cases/global-availability/get-global-availability-by-key.use-case';
+import type {
+    ICreateGlobalAvailabilityUseCase
+} from '@/src/application/use-cases/global-availability/create-global-availability.use-case';
+import type {
+    IUpdateGlobalAvailabilityUseCase
+} from '@/src/application/use-cases/global-availability/update-global-availability.use-case';
+import type {
+    IDeleteGlobalAvailabilityUseCase
+} from '@/src/application/use-cases/global-availability/delete-global-availability.use-case';
 import type {IGetSchedulesMetadataUseCase} from '@/src/application/use-cases/schedule/get-schedules-metadata.use-case';
 import type {IGetScheduleUseCase} from '@/src/application/use-cases/schedule/get-schedule.use-case';
 import type {ISaveScheduleUseCase} from '@/src/application/use-cases/schedule/save-schedule.use-case';
@@ -136,6 +160,28 @@ import type {IDeleteGlobalWishesController} from '@/src/controllers/global-wishe
 import type {
     IImportGlobalWishesTemplateController
 } from '@/src/controllers/global-wishes/import-global-wishes-template.controller';
+import type {IGetAllAvailabilityController} from '@/src/controllers/availability/get-all-availability.controller';
+import type {
+    IGetAvailabilityByKeyController
+} from '@/src/controllers/availability/get-availability-by-key.controller';
+import type {ICreateAvailabilityController} from '@/src/controllers/availability/create-availability.controller';
+import type {IUpdateAvailabilityController} from '@/src/controllers/availability/update-availability.controller';
+import type {IDeleteAvailabilityController} from '@/src/controllers/availability/delete-availability.controller';
+import type {
+    IGetAllGlobalAvailabilityController
+} from '@/src/controllers/global-availability/get-all-global-availability.controller';
+import type {
+    IGetGlobalAvailabilityByKeyController
+} from '@/src/controllers/global-availability/get-global-availability-by-key.controller';
+import type {
+    ICreateGlobalAvailabilityController
+} from '@/src/controllers/global-availability/create-global-availability.controller';
+import type {
+    IUpdateGlobalAvailabilityController
+} from '@/src/controllers/global-availability/update-global-availability.controller';
+import type {
+    IDeleteGlobalAvailabilityController
+} from '@/src/controllers/global-availability/delete-global-availability.controller';
 import type {IGetSchedulesMetadataController} from '@/src/controllers/schedule/get-schedules-metadata.controller';
 import type {IGetScheduleController} from '@/src/controllers/schedule/get-schedule.controller';
 import type {ISaveScheduleController} from '@/src/controllers/schedule/save-schedule.controller';
@@ -216,6 +262,8 @@ export const DI_SYMBOLS = {
     IMinimalStaffRepository: Symbol.for('IMinimalStaffRepository'),
     IWishesAndBlockedRepository: Symbol.for('IWishesAndBlockedRepository'),
     IGlobalWishesAndBlockedRepository: Symbol.for('IGlobalWishesAndBlockedRepository'),
+    IAvailabilityRepository: Symbol.for('IAvailabilityRepository'),
+    IGlobalAvailabilityRepository: Symbol.for('IGlobalAvailabilityRepository'),
     IGlobalWishesTemplateRepository: Symbol.for('IGlobalWishesTemplateRepository'),
     IWeightsTemplateRepository: Symbol.for('IWeightsTemplateRepository'),
     IMinimalStaffTemplateRepository: Symbol.for('IMinimalStaffTemplateRepository'),
@@ -250,6 +298,20 @@ export const DI_SYMBOLS = {
     IUpdateGlobalWishesUseCase: Symbol.for('IUpdateGlobalWishesUseCase'),
     IDeleteGlobalWishesUseCase: Symbol.for('IDeleteGlobalWishesUseCase'),
     IImportGlobalWishesTemplateUseCase: Symbol.for('IImportGlobalWishesTemplateUseCase'),
+
+    // Use Cases — Availability
+    IGetAllAvailabilityUseCase: Symbol.for('IGetAllAvailabilityUseCase'),
+    IGetAvailabilityByKeyUseCase: Symbol.for('IGetAvailabilityByKeyUseCase'),
+    ICreateAvailabilityUseCase: Symbol.for('ICreateAvailabilityUseCase'),
+    IUpdateAvailabilityUseCase: Symbol.for('IUpdateAvailabilityUseCase'),
+    IDeleteAvailabilityUseCase: Symbol.for('IDeleteAvailabilityUseCase'),
+
+    // Use Cases — Global Availability
+    IGetAllGlobalAvailabilityUseCase: Symbol.for('IGetAllGlobalAvailabilityUseCase'),
+    IGetGlobalAvailabilityByKeyUseCase: Symbol.for('IGetGlobalAvailabilityByKeyUseCase'),
+    ICreateGlobalAvailabilityUseCase: Symbol.for('ICreateGlobalAvailabilityUseCase'),
+    IUpdateGlobalAvailabilityUseCase: Symbol.for('IUpdateGlobalAvailabilityUseCase'),
+    IDeleteGlobalAvailabilityUseCase: Symbol.for('IDeleteGlobalAvailabilityUseCase'),
 
     // Use Cases — Schedule
     IGetSchedulesMetadataUseCase: Symbol.for('IGetSchedulesMetadataUseCase'),
@@ -334,6 +396,20 @@ export const DI_SYMBOLS = {
     IDeleteGlobalWishesController: Symbol.for('IDeleteGlobalWishesController'),
     IImportGlobalWishesTemplateController: Symbol.for('IImportGlobalWishesTemplateController'),
 
+    // Controllers — Availability
+    IGetAllAvailabilityController: Symbol.for('IGetAllAvailabilityController'),
+    IGetAvailabilityByKeyController: Symbol.for('IGetAvailabilityByKeyController'),
+    ICreateAvailabilityController: Symbol.for('ICreateAvailabilityController'),
+    IUpdateAvailabilityController: Symbol.for('IUpdateAvailabilityController'),
+    IDeleteAvailabilityController: Symbol.for('IDeleteAvailabilityController'),
+
+    // Controllers — Global Availability
+    IGetAllGlobalAvailabilityController: Symbol.for('IGetAllGlobalAvailabilityController'),
+    IGetGlobalAvailabilityByKeyController: Symbol.for('IGetGlobalAvailabilityByKeyController'),
+    ICreateGlobalAvailabilityController: Symbol.for('ICreateGlobalAvailabilityController'),
+    IUpdateGlobalAvailabilityController: Symbol.for('IUpdateGlobalAvailabilityController'),
+    IDeleteGlobalAvailabilityController: Symbol.for('IDeleteGlobalAvailabilityController'),
+
     // Controllers — Schedule
     IGetSchedulesMetadataController: Symbol.for('IGetSchedulesMetadataController'),
     IGetScheduleController: Symbol.for('IGetScheduleController'),
@@ -393,6 +469,8 @@ export interface DI_RETURN_TYPES {
     IMinimalStaffRepository: IMinimalStaffRepository;
     IWishesAndBlockedRepository: IWishesAndBlockedRepository;
     IGlobalWishesAndBlockedRepository: IGlobalWishesAndBlockedRepository;
+    IAvailabilityRepository: IAvailabilityRepository;
+    IGlobalAvailabilityRepository: IGlobalAvailabilityRepository;
     IGlobalWishesTemplateRepository: IGlobalWishesTemplateRepository;
     IWeightsTemplateRepository: IWeightsTemplateRepository;
     IMinimalStaffTemplateRepository: IMinimalStaffTemplateRepository;
@@ -427,6 +505,20 @@ export interface DI_RETURN_TYPES {
     IUpdateGlobalWishesUseCase: IUpdateGlobalWishesUseCase;
     IDeleteGlobalWishesUseCase: IDeleteGlobalWishesUseCase;
     IImportGlobalWishesTemplateUseCase: IImportGlobalWishesTemplateUseCase;
+
+    // Use Cases — Availability
+    IGetAllAvailabilityUseCase: IGetAllAvailabilityUseCase;
+    IGetAvailabilityByKeyUseCase: IGetAvailabilityByKeyUseCase;
+    ICreateAvailabilityUseCase: ICreateAvailabilityUseCase;
+    IUpdateAvailabilityUseCase: IUpdateAvailabilityUseCase;
+    IDeleteAvailabilityUseCase: IDeleteAvailabilityUseCase;
+
+    // Use Cases — Global Availability
+    IGetAllGlobalAvailabilityUseCase: IGetAllGlobalAvailabilityUseCase;
+    IGetGlobalAvailabilityByKeyUseCase: IGetGlobalAvailabilityByKeyUseCase;
+    ICreateGlobalAvailabilityUseCase: ICreateGlobalAvailabilityUseCase;
+    IUpdateGlobalAvailabilityUseCase: IUpdateGlobalAvailabilityUseCase;
+    IDeleteGlobalAvailabilityUseCase: IDeleteGlobalAvailabilityUseCase;
 
     // Use Cases — Schedule
     IGetSchedulesMetadataUseCase: IGetSchedulesMetadataUseCase;
@@ -510,6 +602,20 @@ export interface DI_RETURN_TYPES {
     IUpdateGlobalWishesController: IUpdateGlobalWishesController;
     IDeleteGlobalWishesController: IDeleteGlobalWishesController;
     IImportGlobalWishesTemplateController: IImportGlobalWishesTemplateController;
+
+    // Controllers — Availability
+    IGetAllAvailabilityController: IGetAllAvailabilityController;
+    IGetAvailabilityByKeyController: IGetAvailabilityByKeyController;
+    ICreateAvailabilityController: ICreateAvailabilityController;
+    IUpdateAvailabilityController: IUpdateAvailabilityController;
+    IDeleteAvailabilityController: IDeleteAvailabilityController;
+
+    // Controllers — Global Availability
+    IGetAllGlobalAvailabilityController: IGetAllGlobalAvailabilityController;
+    IGetGlobalAvailabilityByKeyController: IGetGlobalAvailabilityByKeyController;
+    ICreateGlobalAvailabilityController: ICreateGlobalAvailabilityController;
+    IUpdateGlobalAvailabilityController: IUpdateGlobalAvailabilityController;
+    IDeleteGlobalAvailabilityController: IDeleteGlobalAvailabilityController;
 
     // Controllers — Schedule
     IGetSchedulesMetadataController: IGetSchedulesMetadataController;

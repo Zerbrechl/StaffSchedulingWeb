@@ -1,4 +1,5 @@
 import {WishesAndBlockedEmployee} from "@/src/entities/models/wishes-and-blocked.model";
+import {AvailabilityEmployee} from "@/src/entities/models/availability.model";
 
 export function getDaysByWeekday(year?: number, month?: number): number[][] {
     const today = new Date();
@@ -85,4 +86,28 @@ export function generateMonthlyDataFromWeeklyData(weeklyEmployee: WishesAndBlock
     monthlyEmployee.blocked_shifts = dedupe(monthlyEmployee.blocked_shifts);
 
     return monthlyEmployee;
+}
+
+export function generateMonthlyAvailabilityFromWeeklyData(
+    weeklyEmployee: AvailabilityEmployee,
+    year?: number,
+    month?: number
+): AvailabilityEmployee {
+    const daysByWeekday = getDaysByWeekday(year, month);
+
+    const expandWeekdays = (weekdays: number[]) => Array.from(
+        new Set(
+            weekdays.flatMap((weekday) => (
+                weekday >= 1 && weekday <= 7 ? daysByWeekday[weekday - 1] : []
+            ))
+        )
+    ).sort((a, b) => a - b);
+
+    return {
+        key: weeklyEmployee.key,
+        firstname: weeklyEmployee.firstname,
+        name: weeklyEmployee.name,
+        availability_days: expandWeekdays(weeklyEmployee.availability_days),
+        unavailability_days: expandWeekdays(weeklyEmployee.unavailability_days ?? []),
+    };
 }
