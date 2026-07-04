@@ -19,9 +19,11 @@ export default async function RootLayout({
             lockedCaseId={workflowState.caseId}
             lockedMonthYear={workflowState.monthYear}
         />
-        <main className="container mx-auto p-4">
+        <main className="min-h-screen p-4 md:ml-72">
+            <div className="mx-auto max-w-7xl">
             <WorkflowBanner state={workflowState}/>
             {children}
+            </div>
         </main>
         <Toaster/>
         </body>

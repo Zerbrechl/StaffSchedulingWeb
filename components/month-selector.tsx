@@ -17,10 +17,10 @@ import {
     DropdownMenuContent,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ChevronDown, Plus } from 'lucide-react';
+import { ChevronDown, Plus, RefreshCw } from 'lucide-react';
 import { parseMonthYear } from '@/lib/utils/case-utils';
 import { CaseUnit } from '@/src/entities/models/case.model';
-import { listCasesAction } from '@/features/cases/cases.actions';
+import { listCasesAction, refreshCasesFromSolverOptionsAction } from '@/features/cases/cases.actions';
 
 interface MonthSelectorProps {
     disabled?: boolean;
@@ -36,6 +36,7 @@ export function MonthSelector({ disabled, lockedCaseId, lockedMonthYear }: Month
     const [dialogOpen, setDialogOpen] = useState(false);
     const [availableCases, setAvailableCases] = useState<CaseUnit[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshingOptions, setIsRefreshingOptions] = useState(false);
     const [isCasesOpen, setIsCasesOpen] = useState(false);
 
     const urlMonthYear = searchParams.get('monthYear');
@@ -75,6 +76,20 @@ export function MonthSelector({ disabled, lockedCaseId, lockedMonthYear }: Month
     useEffect(() => {
         refreshCases();
     }, []);
+
+    const refreshCasesFromSolverOptions = async () => {
+        setIsRefreshingOptions(true);
+
+        try {
+            const data = await refreshCasesFromSolverOptionsAction(effectiveMonthYear);
+            setAvailableCases(data.units ?? []);
+            router.refresh();
+        } catch (error) {
+            console.error('Failed to refresh cases from solver options', error);
+        } finally {
+            setIsRefreshingOptions(false);
+        }
+    };
 
     const getMonthName = (month: number) =>
         new Date(0, month - 1).toLocaleString('de-DE', { month: 'long' });
@@ -142,8 +157,8 @@ export function MonthSelector({ disabled, lockedCaseId, lockedMonthYear }: Month
     };
 
     return (
-        <div className="flex items-center gap-3 w-full max-w-[380px]">
-            <div className="flex items-center gap-2 min-w-0">
+        <div className="flex w-full max-w-[440px] flex-wrap items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
                 <span className="text-sm text-muted-foreground">Monat:</span>
 
                 <Select
@@ -168,39 +183,52 @@ export function MonthSelector({ disabled, lockedCaseId, lockedMonthYear }: Month
                 </Select>
             </div>
 
-            {effectiveMonthYear && (
-                <DropdownMenu open={isCasesOpen} onOpenChange={setIsCasesOpen}>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            className="h-8 w-[128px] justify-between px-2 text-sm"
-                            disabled={disabled || isLoading}
-                        >
-                            <span>Cases ({casesForSelectedMonth.length})</span>
-                            <ChevronDown
-                                className={`h-4 w-4 transition-transform ${isCasesOpen ? 'rotate-180' : ''}`}
-                            />
-                        </Button>
-                    </DropdownMenuTrigger>
-
-                    <DropdownMenuContent align="start" className="w-[128px] max-h-40 overflow-y-auto">
-                        {casesForSelectedMonth.map(unit => (
-                            <DropdownMenuCheckboxItem
-                                key={unit.unitId}
-                                checked={selectedCaseIds.includes(unit.unitId)}
+            <div className="flex shrink-0 items-center gap-2">
+                {effectiveMonthYear && (
+                    <DropdownMenu open={isCasesOpen} onOpenChange={setIsCasesOpen}>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                className="h-8 w-[128px] justify-between px-2 text-sm"
                                 disabled={disabled || isLoading}
-                                onSelect={event => event.preventDefault()}
-                                onCheckedChange={() => toggleCaseId(unit.unitId)}
                             >
-                                Case {unit.unitId}
-                            </DropdownMenuCheckboxItem>
-                        ))}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            )}
+                                <span>Cases ({casesForSelectedMonth.length})</span>
+                                <ChevronDown
+                                    className={`h-4 w-4 transition-transform ${isCasesOpen ? 'rotate-180' : ''}`}
+                                />
+                            </Button>
+                        </DropdownMenuTrigger>
 
-            <div className="shrink-0">
+                        <DropdownMenuContent align="start" className="w-[128px] max-h-40 overflow-y-auto">
+                            {casesForSelectedMonth.map(unit => (
+                                <DropdownMenuCheckboxItem
+                                    key={unit.unitId}
+                                    checked={selectedCaseIds.includes(unit.unitId)}
+                                    disabled={disabled || isLoading}
+                                    onSelect={event => event.preventDefault()}
+                                    onCheckedChange={() => toggleCaseId(unit.unitId)}
+                                >
+                                    Case {unit.unitId}
+                                </DropdownMenuCheckboxItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
+
+                <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={disabled || isLoading || isRefreshingOptions || !effectiveMonthYear}
+                    onClick={refreshCasesFromSolverOptions}
+                    aria-label="Cases vom Backend aktualisieren"
+                >
+                    <RefreshCw className={`h-4 w-4 ${isRefreshingOptions ? 'animate-spin' : ''}`} />
+                </Button>
+            </div>
+
+            <div className="hidden shrink-0">
                 <Button
                     size="sm"
                     disabled={disabled || isLoading}
