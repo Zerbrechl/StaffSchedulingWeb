@@ -22,17 +22,7 @@ export async function listCasesAction(): Promise<{ units: CaseUnit[] }> {
 
 export async function refreshCasesFromSolverOptionsAction(monthYear: string): Promise<{ units: CaseUnit[] }> {
     const baseUrl = getSolverApiConfig().baseUrl;
-    const paths = ['/solve/options', '/options'];
-    let response: Response | null = null;
-
-    for (const path of paths) {
-        response = await fetch(`${baseUrl}${path}`, {cache: 'no-store'});
-        if (response.ok || response.status !== 404) break;
-    }
-
-    if (!response) {
-        throw new Error('Failed to load solver options');
-    }
+    const response = await fetch(`${baseUrl}/solve/options`, {cache: 'no-store'});
 
     if (!response.ok) {
         const message = await response.text().catch(() => '');
