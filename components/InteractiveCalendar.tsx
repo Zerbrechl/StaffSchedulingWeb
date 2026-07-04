@@ -31,6 +31,12 @@ export interface DayData {
     events: Event[];
 }
 
+interface ShiftGroupDayCategoryRule {
+    categoryId: string;
+    eventCategoryId: string;
+    eventTitles: string[];
+}
+
 export interface InteractiveCalendarProps {
     month: number; // 1-12 (January = 1)
     year: number;
@@ -47,6 +53,8 @@ export interface InteractiveCalendarProps {
     view?: 'month' | 'week'; // View mode
     /** If provided, event titles are restricted to these values and shown as toggle buttons */
     allowedEventTitles?: string[];
+    availabilityShiftRule?: ShiftGroupDayCategoryRule;
+    wishShiftRules?: ShiftGroupDayCategoryRule[];
 }
 
 export function InteractiveCalendar({
@@ -64,6 +72,8 @@ export function InteractiveCalendar({
                                         container,
                                         view = 'month',
                                         allowedEventTitles,
+                                        availabilityShiftRule,
+                                        wishShiftRules,
                                     }: InteractiveCalendarProps) {
     const [dayData, setDayData] = useState<DayData[]>(initialDayData);
     const [openPopover, setOpenPopover] = useState<string | null>(null);
@@ -132,8 +142,92 @@ export function InteractiveCalendar({
         onDayDataChange?.(newDayData);
     };
 
+    const shiftGroupDayCategoryRules = wishShiftRules ?? (availabilityShiftRule ? [availabilityShiftRule] : []);
+    const wholeDayCategoryIds = new Set(shiftGroupDayCategoryRules.map((rule) => rule.categoryId));
+    const shiftCategoryIdsWithWholeDayRules = new Set(shiftGroupDayCategoryRules.map((rule) => rule.eventCategoryId));
+    const shiftTitlesControlledByRules = new Set(shiftGroupDayCategoryRules.flatMap((rule) => rule.eventTitles));
+
+    const getWholeDayCategoryFromCompleteShiftGroup = (events: Event[]) => {
+        const matchingRule = shiftGroupDayCategoryRules.find((rule) => {
+            const selectedShiftTitles = new Set(
+                events
+                    .filter((event) => event.categoryId === rule.eventCategoryId)
+                    .map((event) => event.title)
+            );
+
+            return rule.eventTitles.every((shiftTitle) => selectedShiftTitles.has(shiftTitle));
+        });
+
+        return matchingRule?.categoryId;
+    };
+
     const setCategory = (date: string, categoryId: string | undefined) => {
+        const selectedWholeDayRule = shiftGroupDayCategoryRules.find((rule) => rule.categoryId === categoryId);
+
+        if (selectedWholeDayRule) {
+            const current = getDayData(date);
+            const eventsOutsideControlledShiftGroups = current.events.filter((event) => (
+                !shiftTitlesControlledByRules.has(event.title) || !shiftCategoryIdsWithWholeDayRules.has(event.categoryId ?? '')
+            ));
+            const fullDayShiftEvents = selectedWholeDayRule.eventTitles.map((title, index) => ({
+                id: `${date}-${selectedWholeDayRule.eventCategoryId}-${title}-${index}`,
+                title,
+                categoryId: selectedWholeDayRule.eventCategoryId,
+            }));
+
+            updateDayData(date, {categoryId, events: [...eventsOutsideControlledShiftGroups, ...fullDayShiftEvents]});
+            return;
+        }
+
+        if (shiftGroupDayCategoryRules.length > 0 && categoryId === undefined) {
+            const current = getDayData(date);
+            updateDayData(date, {
+                categoryId,
+                events: current.events.filter((event) => !shiftCategoryIdsWithWholeDayRules.has(event.categoryId ?? '')),
+            });
+            return;
+        }
+
         updateDayData(date, {categoryId});
+    };
+
+    const toggleRestrictedEvent = (date: string, eventCat: EventCategory, title: string, active: boolean) => {
+        const current = getDayData(date);
+        let updatedEvents = [...current.events];
+
+        if (active) {
+            const index = updatedEvents.findIndex(
+                (event) => event.categoryId === eventCat.id && event.title === title
+            );
+            if (index !== -1) {
+                updatedEvents.splice(index, 1);
+            }
+        } else {
+            updatedEvents = [
+                ...updatedEvents.filter((event) => (
+                    event.title !== title ||
+                    event.categoryId === eventCat.id ||
+                    !shiftCategoryIdsWithWholeDayRules.has(event.categoryId ?? '')
+                )),
+                {
+                    id: `${date}-${++eventIdCounter.current}`,
+                    title,
+                    categoryId: eventCat.id,
+                },
+            ];
+        }
+
+        if (shiftCategoryIdsWithWholeDayRules.has(eventCat.id)) {
+            const matchingWholeDayCategoryId = getWholeDayCategoryFromCompleteShiftGroup(updatedEvents);
+
+            updateDayData(date, {
+                categoryId: matchingWholeDayCategoryId ?? (wholeDayCategoryIds.has(current.categoryId ?? '') ? undefined : current.categoryId),
+                events: updatedEvents,
+            });
+            return;
+        }
+
+        updateDayData(date, {events: updatedEvents});
     };
 
     const addEvent = (date: string, title: string, categoryId?: string) => {
@@ -345,7 +439,13 @@ export function InteractiveCalendar({
                                         )}
                                     </button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-80" align="start" container={container}>
+                                <PopoverContent
+                                    className="w-80 max-h-[min(520px,var(--radix-popover-content-available-height))] overflow-y-auto overscroll-contain"
+                                    align="start"
+                                    container={container}
+                                    onWheel={(event) => event.stopPropagation()}
+                                    onTouchMove={(event) => event.stopPropagation()}
+                                >
                                     {/* Overview mode */}
                                     {(!popoverMode[date] || popoverMode[date] === "overview") && (
                                         <div className="space-y-4">
@@ -417,22 +517,7 @@ export function InteractiveCalendar({
                                                                             <button
                                                                                 key={title}
                                                                                 type="button"
-                                                                                onClick={() => {
-                                                                                    if (active) {
-                                                                                        // remove
-                                                                                        const current = getDayData(date);
-                                                                                        const idx = current.events.findIndex(
-                                                                                            (e) => e.categoryId === eventCat.id && e.title === title
-                                                                                        );
-                                                                                        if (idx !== -1) {
-                                                                                            const updated = [...current.events];
-                                                                                            updated.splice(idx, 1);
-                                                                                            updateDayData(date, {events: updated});
-                                                                                        }
-                                                                                    } else {
-                                                                                        addEvent(date, title, eventCat.id);
-                                                                                    }
-                                                                                }}
+                                                                                onClick={() => toggleRestrictedEvent(date, eventCat, title, active)}
                                                                                 className={[
                                                                                     "w-10 h-10 rounded-lg text-sm font-semibold border-2 transition-all",
                                                                                     active

@@ -269,7 +269,7 @@ export function AvailabilityForm({
                                 showCategoryTitle={false}
                                 view={isGlobal ? 'week' : 'month'}
                                 allowedEventTitles={['F', 'S', 'N']}
-                                fullDayCategorySync={{
+                                availabilityShiftRule={{
                                     categoryId: 'unavailable',
                                     eventCategoryId: 'unavailable-shift',
                                     eventTitles: ['F', 'S', 'N'],

@@ -57,10 +57,12 @@ export function makeImportGlobalWishesTemplateUseCase(
                 key: currentEmployee.key,
                 firstname: templateEmployee.firstname,
                 name: templateEmployee.name,
-                wish_days: templateEmployee.wish_days,
-                wish_shifts: templateEmployee.wish_shifts,
-                blocked_days: templateEmployee.blocked_days,
-                blocked_shifts: templateEmployee.blocked_shifts,
+                wish_days: templateEmployee.wish_days ?? [],
+                wish_shifts: templateEmployee.wish_shifts ?? [],
+                work_days: templateEmployee.work_days ?? [],
+                work_shifts: templateEmployee.work_shifts ?? [],
+                blocked_days: templateEmployee.blocked_days ?? [],
+                blocked_shifts: templateEmployee.blocked_shifts ?? [],
             };
             await globalWishesRepository.create(caseId, monthYear, entry);
             await wishesRepository.generateFromGlobal(caseId, monthYear, entry);
