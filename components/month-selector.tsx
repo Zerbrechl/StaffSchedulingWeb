@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     Select,
     SelectContent,
@@ -60,22 +60,29 @@ export function MonthSelector({ disabled, lockedCaseId, lockedMonthYear }: Month
             : [];
     }, [disabled, lockedCaseId, urlCaseIds]);
 
-    const refreshCases = async () => {
+    const refreshCases = useCallback(async (monthYear = effectiveMonthYear) => {
         setIsLoading(true);
 
         try {
-            const data = await listCasesAction();
+            const data = monthYear
+                ? await refreshCasesFromSolverOptionsAction(monthYear)
+                : await listCasesAction();
             setAvailableCases(data.units ?? []);
         } catch {
-            setAvailableCases([]);
+            try {
+                const data = await listCasesAction();
+                setAvailableCases(data.units ?? []);
+            } catch {
+                setAvailableCases([]);
+            }
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [effectiveMonthYear]);
 
     useEffect(() => {
-        refreshCases();
-    }, []);
+        refreshCases(effectiveMonthYear);
+    }, [effectiveMonthYear, refreshCases]);
 
     const refreshCasesFromSolverOptions = async () => {
         setIsRefreshingOptions(true);
