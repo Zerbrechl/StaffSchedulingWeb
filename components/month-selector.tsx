@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Select,
     SelectContent,
@@ -10,6 +10,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { FetchCaseDialog } from '@/features/cases/components/fetch-case-dialog';
 import {
     DropdownMenu,
@@ -18,7 +19,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ChevronDown, Plus, RefreshCw } from 'lucide-react';
-import { parseMonthYear } from '@/lib/utils/case-utils';
+import { formatMonthYear, parseMonthYear } from '@/lib/utils/case-utils';
 import { CaseUnit } from '@/src/entities/models/case.model';
 import { listCasesAction, refreshCasesFromSolverOptionsAction } from '@/features/cases/cases.actions';
 
@@ -38,6 +39,8 @@ export function MonthSelector({ disabled, lockedCaseId, lockedMonthYear }: Month
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshingOptions, setIsRefreshingOptions] = useState(false);
     const [isCasesOpen, setIsCasesOpen] = useState(false);
+    const [yearInput, setYearInput] = useState('');
+    const lastAutoRefreshMonthYearRef = useRef<string | null>(null);
 
     const urlMonthYear = searchParams.get('monthYear');
     const urlCaseIds = searchParams.get('caseIds');
@@ -46,6 +49,18 @@ export function MonthSelector({ disabled, lockedCaseId, lockedMonthYear }: Month
         disabled && lockedMonthYear
             ? lockedMonthYear
             : urlMonthYear ?? '';
+
+    const selectedMonthYear = useMemo(() => {
+        if (/^(0?[1-9]|1[0-2])_\d{4}$/.test(effectiveMonthYear)) {
+            return parseMonthYear(effectiveMonthYear);
+        }
+
+        const today = new Date();
+        return {
+            month: today.getMonth() + 1,
+            year: today.getFullYear(),
+        };
+    }, [effectiveMonthYear]);
 
     const selectedCaseIds = useMemo(() => {
         if (disabled && lockedCaseId != null) {
@@ -60,7 +75,7 @@ export function MonthSelector({ disabled, lockedCaseId, lockedMonthYear }: Month
             : [];
     }, [disabled, lockedCaseId, urlCaseIds]);
 
-    const refreshCases = useCallback(async (monthYear = effectiveMonthYear) => {
+    const refreshCases = useCallback(async (monthYear = effectiveMonthYear, refreshPage = false) => {
         setIsLoading(true);
 
         try {
@@ -68,6 +83,9 @@ export function MonthSelector({ disabled, lockedCaseId, lockedMonthYear }: Month
                 ? await refreshCasesFromSolverOptionsAction(monthYear)
                 : await listCasesAction();
             setAvailableCases(data.units ?? []);
+            if (refreshPage) {
+                router.refresh();
+            }
         } catch {
             try {
                 const data = await listCasesAction();
@@ -78,19 +96,28 @@ export function MonthSelector({ disabled, lockedCaseId, lockedMonthYear }: Month
         } finally {
             setIsLoading(false);
         }
-    }, [effectiveMonthYear]);
+    }, [effectiveMonthYear, router]);
 
     useEffect(() => {
-        refreshCases(effectiveMonthYear);
+        const shouldRefreshPage = Boolean(
+            effectiveMonthYear &&
+            lastAutoRefreshMonthYearRef.current !== null &&
+            lastAutoRefreshMonthYearRef.current !== effectiveMonthYear
+        );
+
+        lastAutoRefreshMonthYearRef.current = effectiveMonthYear;
+        refreshCases(effectiveMonthYear, shouldRefreshPage);
     }, [effectiveMonthYear, refreshCases]);
+
+    useEffect(() => {
+        setYearInput(String(selectedMonthYear.year));
+    }, [selectedMonthYear.year]);
 
     const refreshCasesFromSolverOptions = async () => {
         setIsRefreshingOptions(true);
 
         try {
-            const data = await refreshCasesFromSolverOptionsAction(effectiveMonthYear);
-            setAvailableCases(data.units ?? []);
-            router.refresh();
+            await refreshCases(effectiveMonthYear, true);
         } catch (error) {
             console.error('Failed to refresh cases from solver options', error);
         } finally {
@@ -98,28 +125,15 @@ export function MonthSelector({ disabled, lockedCaseId, lockedMonthYear }: Month
         }
     };
 
-    const getMonthName = (month: number) =>
-        new Date(0, month - 1).toLocaleString('de-DE', { month: 'long' });
-
-    const monthOptions = useMemo(() => {
-        const uniqueMonths = new Set<string>();
-
-        availableCases.forEach(unit => {
-            unit.months.forEach(monthYear => {
-                uniqueMonths.add(monthYear);
-            });
-        });
-
-        return Array.from(uniqueMonths)
-            .map(monthYear => ({
-                monthYear,
-                ...parseMonthYear(monthYear),
-            }))
-            .sort((a, b) => {
-                if (a.year !== b.year) return a.year - b.year;
-                return a.month - b.month;
-            });
-    }, [availableCases]);
+    const monthOptions = useMemo(() => (
+        Array.from({ length: 12 }, (_, index) => {
+            const month = index + 1;
+            return {
+                month,
+                label: new Date(0, month - 1).toLocaleString('de-DE', { month: 'long' }),
+            };
+        })
+    ), []);
 
     const casesForSelectedMonth = useMemo(() => {
         if (!effectiveMonthYear) return [];
@@ -129,14 +143,32 @@ export function MonthSelector({ disabled, lockedCaseId, lockedMonthYear }: Month
         );
     }, [availableCases, effectiveMonthYear]);
 
-    const handleMonthYearChange = (monthYear: string) => {
+    const updateMonthYear = (month: number, year: number) => {
+        if (!Number.isInteger(month) || month < 1 || month > 12 || !Number.isInteger(year) || year < 1900 || year > 2100) {
+            return;
+        }
+
         const params = new URLSearchParams(searchParams.toString());
 
-        params.set('monthYear', monthYear);
+        params.set('monthYear', formatMonthYear(month, year));
         params.delete('caseIds');
         params.delete('caseId');
 
         router.push(`${pathname}?${params.toString()}`);
+    };
+
+    const handleMonthChange = (monthValue: string) => {
+        updateMonthYear(Number(monthValue), selectedMonthYear.year);
+    };
+
+    const commitYearInput = () => {
+        const year = Number(yearInput);
+        if (!Number.isInteger(year) || year < 1900 || year > 2100) {
+            setYearInput(String(selectedMonthYear.year));
+            return;
+        }
+
+        updateMonthYear(selectedMonthYear.month, year);
     };
 
     const toggleCaseId = (caseId: number) => {
@@ -164,30 +196,48 @@ export function MonthSelector({ disabled, lockedCaseId, lockedMonthYear }: Month
     };
 
     return (
-        <div className="flex w-full max-w-[440px] flex-wrap items-center gap-2">
+        <div className="flex w-full max-w-[520px] flex-wrap items-center gap-2">
             <div className="flex min-w-0 items-center gap-2">
                 <span className="text-sm text-muted-foreground">Monat:</span>
 
                 <Select
-                    value={effectiveMonthYear}
-                    onValueChange={handleMonthYearChange}
-                    disabled={disabled || isLoading}
+                    value={effectiveMonthYear ? String(selectedMonthYear.month) : undefined}
+                    onValueChange={handleMonthChange}
+                    disabled={disabled}
                 >
-                    <SelectTrigger className="w-[174px]">
+                    <SelectTrigger className="w-[132px]">
                         <SelectValue placeholder="Wähle Monat" />
                     </SelectTrigger>
 
                     <SelectContent className="max-h-[240px] overflow-y-auto">
                         {monthOptions.map(option => (
                             <SelectItem
-                                key={option.monthYear}
-                                value={option.monthYear}
+                                key={option.month}
+                                value={String(option.month)}
                             >
-                                {getMonthName(option.month)} {option.year}
+                                {option.label}
                             </SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
+
+                <Input
+                    type="number"
+                    inputMode="numeric"
+                    min={1900}
+                    max={2100}
+                    value={yearInput}
+                    onChange={(event) => setYearInput(event.target.value)}
+                    onBlur={commitYearInput}
+                    onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                            event.currentTarget.blur();
+                        }
+                    }}
+                    disabled={disabled}
+                    aria-label="Jahr"
+                    className="h-8 w-[82px]"
+                />
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
