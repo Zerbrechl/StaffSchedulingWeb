@@ -1,7 +1,7 @@
 'use client';
 
 import {useMemo, useState} from 'react';
-import {CalendarCheck, CalendarX, Minus, Pencil, Search, Trash2} from 'lucide-react';
+import {CalendarX, Clock, Minus, Pencil, Search, Trash2} from 'lucide-react';
 import {Badge} from '@/components/ui/badge';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
@@ -67,9 +67,10 @@ export function AvailabilityList({employees, onEdit, onDelete, isDeleting, dayCo
                         <TableBody>
                             {filteredEmployees.map((employee) => {
                                 const unavailableDayCount = employee.unavailability_days?.length ?? 0;
+                                const unavailableShiftCount = employee.unavailability_shifts?.length ?? 0;
                                 const neutralDayCount = dayCount === undefined
                                     ? undefined
-                                    : Math.max(0, dayCount - employee.availability_days.length - unavailableDayCount);
+                                    : Math.max(0, dayCount - unavailableDayCount);
 
                                 return (
                                     <TableRow key={employee.key}>
@@ -82,22 +83,22 @@ export function AvailabilityList({employees, onEdit, onDelete, isDeleting, dayCo
                                         <TableCell>
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex items-center gap-2">
-                                                    <CalendarCheck className="h-4 w-4 text-green-500"/>
-                                                    <Badge variant="outline" className="bg-green-100">
-                                                        {employee.availability_days.length} Verfügbare Tage
-                                                    </Badge>
-                                                </div>
-                                                <div className="flex items-center gap-2">
                                                     <CalendarX className="h-4 w-4 text-red-500"/>
                                                     <Badge variant="outline" className="bg-red-100">
                                                         {unavailableDayCount} Nicht verfügbare Tage
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Clock className="h-4 w-4 text-red-400"/>
+                                                    <Badge variant="outline" className="bg-red-50">
+                                                        {unavailableShiftCount} Nicht verfügbare Schichten
                                                     </Badge>
                                                 </div>
                                                 {neutralDayCount !== undefined && (
                                                     <div className="flex items-center gap-2">
                                                         <Minus className="h-4 w-4 text-slate-500"/>
                                                         <Badge variant="outline">
-                                                            {neutralDayCount} Neutrale Tage
+                                                            {neutralDayCount} Nicht ausgewählte Tage
                                                         </Badge>
                                                     </div>
                                                 )}

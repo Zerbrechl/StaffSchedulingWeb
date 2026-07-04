@@ -4,8 +4,8 @@ export const AvailabilityEmployeeSchema = z.object({
     key: z.number(),
     firstname: z.string(),
     name: z.string(),
-    availability_days: z.array(z.number()),
     unavailability_days: z.array(z.number()).optional().default([]),
+    unavailability_shifts: z.array(z.tuple([z.number(), z.string()])).optional().default([]),
 });
 
 export type AvailabilityEmployee = z.infer<typeof AvailabilityEmployeeSchema>;

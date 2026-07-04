@@ -54,14 +54,14 @@ export class LowdbAvailabilityRepository implements IAvailabilityRepository {
                 key: globalEntry.key,
                 firstname: globalEntry.firstname,
                 name: globalEntry.name,
-                availability_days: monthlyData.availability_days,
                 unavailability_days: monthlyData.unavailability_days,
+                unavailability_shifts: monthlyData.unavailability_shifts,
             });
         } else {
             db.data.employees[index] = {
                 ...db.data.employees[index],
-                availability_days: monthlyData.availability_days,
                 unavailability_days: monthlyData.unavailability_days,
+                unavailability_shifts: monthlyData.unavailability_shifts,
             };
         }
         await db.write();
