@@ -222,9 +222,12 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
         await onAfterOperation?.();
     };
 
+    const getSelectedUnits = (opts: SolverExecOptions) =>
+        opts.caseIds && opts.caseIds.length > 0 ? opts.caseIds : [opts.caseId];
+
     async function executeFetch(opts: SolverExecOptions, skipFinish: boolean = false): Promise<SolverOperationResult> {
         if (!skipFinish) startExecution(60_000);
-        const unit = opts.caseIds && opts.caseIds.length > 1 ? opts.caseIds : opts.caseId;
+        const unit = getSelectedUnits(opts);
         try {
             const result = await solverFetch(opts.caseId, opts.monthYear, {
                 unit,
@@ -250,7 +253,7 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
         if (!skipFinish) {
             startExecution(timeout * 1_000 + 10_000, timeout);
         }
-        const unit = opts.caseIds && opts.caseIds.length > 1 ? opts.caseIds : opts.caseId;
+        const unit = getSelectedUnits(opts);
         try {
             const result = await solverSolve(opts.caseId, opts.monthYear, {
                 unit,
@@ -291,7 +294,7 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
 
     async function executeSolveMultiple(opts: SolverExecOptions, timeout: number, skipFinish: boolean = false): Promise<SolverOperationResult> {
         if (!skipFinish) startExecution(timeout * 3 * 1_000 + 20_000, timeout);
-        const unit = opts.caseIds && opts.caseIds.length > 1 ? opts.caseIds : opts.caseId;
+        const unit = getSelectedUnits(opts);
         try {
             const result = await solverSolveMultiple(opts.caseId, opts.monthYear, {
                 unit,
@@ -341,7 +344,7 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
 
     async function executeInsert(opts: SolverExecOptions, skipFinish: boolean = false): Promise<SolverOperationResult> {
         if (!skipFinish) startExecution(60_000);
-        const unit = opts.caseIds && opts.caseIds.length > 1 ? opts.caseIds : opts.caseId;
+        const unit = getSelectedUnits(opts);
         try {
             const result = await solverInsert(opts.caseId, opts.monthYear, {
                 unit,
@@ -366,7 +369,7 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
 
     async function executeDelete(opts: SolverExecOptions, skipFinish: boolean = false): Promise<SolverOperationResult> {
         if (!skipFinish) startExecution(60_000);
-        const unit = opts.caseIds && opts.caseIds.length > 1 ? opts.caseIds : opts.caseId;
+        const unit = getSelectedUnits(opts);
         try {
             const result = await solverDelete(opts.caseId, opts.monthYear, {
                 unit,

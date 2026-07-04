@@ -52,6 +52,11 @@ export function SolverPageClient({
         );
     }, [searchParams]);
 
+    const selectedAvailableCaseIds = useMemo(
+        () => visibleCaseIds.filter(id => availableCaseIds.includes(id)),
+        [availableCaseIds, visibleCaseIds]
+    );
+
     const toggleCase = (selectedCaseId: number) => {
         const nextCaseIds = visibleCaseIds.includes(selectedCaseId)
             ? visibleCaseIds.filter(id => id !== selectedCaseId)
@@ -92,7 +97,7 @@ export function SolverPageClient({
 
             <div className="flex flex-wrap gap-2">
                 {availableCaseIds.map(availableCaseId => {
-                    const active = visibleCaseIds.includes(availableCaseId);
+                    const active = selectedAvailableCaseIds.includes(availableCaseId);
 
                     return (
                         <Button
@@ -119,7 +124,7 @@ export function SolverPageClient({
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <SolverControlPanel
                         caseId={caseId}
-                        selectedCaseIds={visibleCaseIds}
+                        selectedCaseIds={selectedAvailableCaseIds}
                         monthYear={monthYear}
                         onAfterOperation={refreshJobs}
                         initialLastInsertedSolution={initialLastInsertedSolution}

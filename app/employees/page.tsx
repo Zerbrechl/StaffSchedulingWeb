@@ -1,8 +1,7 @@
 import {EmployeesPageClient} from './employees-page-client';
-import {listCasesAction} from '@/features/cases/cases.actions';
+import {listAvailableCaseIdsForMonthAction} from '@/features/cases/cases.actions';
 import {getAllEmployeesAction} from '@/features/employees/employees.actions';
 import {Employee} from '@/src/entities/models/employee.model';
-import {CaseUnit} from '@/src/entities/models/case.model';
 
 interface EmployeeCaseData {
     caseId: number;
@@ -48,13 +47,12 @@ export default async function EmployeesPage({
             und mindestens einen Case aus</div>;
     }
 
-    const {units} = await listCasesAction();
-    const availableCaseIds = units
-        .filter((unit: CaseUnit) => unit.months.includes(monthYear))
-        .map(unit => unit.unitId);
+    const availableCaseIds = await listAvailableCaseIdsForMonthAction(monthYear);
+
+    const selectedCaseIds = caseIds.filter(id => availableCaseIds.includes(id));
 
     const employeeResults: EmployeeResult[] = await Promise.all(
-        caseIds.map(async caseId => {
+        selectedCaseIds.map(async caseId => {
             try {
                 return {
                     caseId,

@@ -1,7 +1,6 @@
 import {WishesAndBlockedPageClient} from './wishes-and-blocked-page-client';
 import {getAllWishesAction} from '@/features/wishes_and_blocked/wishes-and-blocked.actions';
-import {listCasesAction} from '@/features/cases/cases.actions';
-import {CaseUnit} from '@/src/entities/models/case.model';
+import {listAvailableCaseIdsForMonthAction} from '@/features/cases/cases.actions';
 import {WishesAndBlockedEmployee} from '@/src/entities/models/wishes-and-blocked.model';
 
 interface WishesCaseData {
@@ -48,13 +47,12 @@ export default async function WishesAndBlockedPage({
             aus</div>;
     }
 
-    const {units} = await listCasesAction();
-    const availableCaseIds = units
-        .filter((unit: CaseUnit) => unit.months.includes(monthYear))
-        .map(unit => unit.unitId);
+    const availableCaseIds = await listAvailableCaseIdsForMonthAction(monthYear);
+
+    const selectedCaseIds = caseIds.filter(id => availableCaseIds.includes(id));
 
     const wishesResults: WishesResult[] = await Promise.all(
-        caseIds.map(async caseId => {
+        selectedCaseIds.map(async caseId => {
             try {
                 return {
                     caseId,

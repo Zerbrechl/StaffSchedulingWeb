@@ -1,7 +1,6 @@
 import {WeightsPageClient} from './weights-page-client';
 import {getWeightsAction} from '@/features/weights/weights.actions';
-import {listCasesAction} from '@/features/cases/cases.actions';
-import {CaseUnit} from '@/src/entities/models/case.model';
+import {listAvailableCaseIdsForMonthAction} from '@/features/cases/cases.actions';
 import {Weights} from '@/src/entities/models/weights.model';
 
 interface WeightsCaseData {
@@ -48,13 +47,12 @@ export default async function WeightsPage({
             aus</div>;
     }
 
-    const {units} = await listCasesAction();
-    const availableCaseIds = units
-        .filter((unit: CaseUnit) => unit.months.includes(monthYear))
-        .map(unit => unit.unitId);
+    const availableCaseIds = await listAvailableCaseIdsForMonthAction(monthYear);
+
+    const selectedCaseIds = caseIds.filter(id => availableCaseIds.includes(id));
 
     const weightsResults: WeightsResult[] = await Promise.all(
-        caseIds.map(async caseId => {
+        selectedCaseIds.map(async caseId => {
             try {
                 return {
                     caseId,

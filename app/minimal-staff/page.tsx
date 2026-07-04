@@ -1,7 +1,6 @@
 import {MinimalStaffPageClient} from './minimal-staff-page-client';
 import {getMinimalStaffAction} from '@/features/minimal-staff/minimal-staff.actions';
-import {listCasesAction} from '@/features/cases/cases.actions';
-import {CaseUnit} from '@/src/entities/models/case.model';
+import {listAvailableCaseIdsForMonthAction} from '@/features/cases/cases.actions';
 import {MinimalStaffRequirements} from '@/src/entities/models/minimal-staff.model';
 
 interface MinimalStaffCaseData {
@@ -48,13 +47,12 @@ export default async function MinimalStaffPage({
             aus</div>;
     }
 
-    const {units} = await listCasesAction();
-    const availableCaseIds = units
-        .filter((unit: CaseUnit) => unit.months.includes(monthYear))
-        .map(unit => unit.unitId);
+    const availableCaseIds = await listAvailableCaseIdsForMonthAction(monthYear);
+
+    const selectedCaseIds = caseIds.filter(id => availableCaseIds.includes(id));
 
     const minimalStaffResults: MinimalStaffResult[] = await Promise.all(
-        caseIds.map(async caseId => {
+        selectedCaseIds.map(async caseId => {
             try {
                 return {
                     caseId,

@@ -2,8 +2,7 @@ import {SolverPageClient} from './solver-page-client';
 import {getJobs, checkSolverHealth, getLastInsertedSolution} from '@/features/solver/solver.actions';
 import {getWorkflowSession} from '@/src/infrastructure/services/workflow-session.service';
 import {getSelectedScheduleAction} from '@/features/schedule/schedule.actions';
-import {listCasesAction} from '@/features/cases/cases.actions';
-import {CaseUnit} from '@/src/entities/models/case.model';
+import {listAvailableCaseIdsForMonthAction} from '@/features/cases/cases.actions';
 
 export default async function SolverPage({
                                              searchParams,
@@ -31,12 +30,7 @@ export default async function SolverPage({
         )
     );
 
-    const {units} = await listCasesAction();
-
-    const availableCaseIds = units
-        .filter((unit: CaseUnit) => unit.months.includes(monthYear))
-        .map(unit => unit.unitId)
-        .sort((a, b) => a - b);
+    const availableCaseIds = await listAvailableCaseIdsForMonthAction(monthYear);
 
     const activeCaseId =
         selectedCaseIds.find(id => availableCaseIds.includes(id)) ?? null;

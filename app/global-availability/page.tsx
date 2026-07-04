@@ -1,9 +1,8 @@
 import {GlobalAvailabilityPageClient} from './global-availability-page-client';
 import {getAllGlobalAvailabilityAction} from '@/features/availability/availability.actions';
 import {listAvailabilityTemplatesAction} from '@/features/templates/availability-templates.actions';
-import {listCasesAction} from '@/features/cases/cases.actions';
+import {listAvailableCaseIdsForMonthAction} from '@/features/cases/cases.actions';
 import type {AvailabilityEmployee} from '@/src/entities/models/availability.model';
-import type {CaseUnit} from '@/src/entities/models/case.model';
 import type {TemplateSummary} from '@/src/entities/models/template.model';
 
 interface GlobalAvailabilityCaseData {
@@ -45,13 +44,12 @@ export default async function GlobalAvailabilityPage({
         return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Monat aus</div>;
     }
 
-    const {units} = await listCasesAction();
-    const availableCaseIds = units
-        .filter((unit: CaseUnit) => unit.months.includes(monthYear))
-        .map(unit => unit.unitId);
+    const availableCaseIds = await listAvailableCaseIdsForMonthAction(monthYear);
+
+    const selectedCaseIds = caseIds.filter(id => availableCaseIds.includes(id));
 
     const results: GlobalAvailabilityResult[] = await Promise.all(
-        caseIds.map(async caseId => {
+        selectedCaseIds.map(async caseId => {
             try {
                 const [employees, templates] = await Promise.all([
                     getAllGlobalAvailabilityAction(caseId, monthYear),
