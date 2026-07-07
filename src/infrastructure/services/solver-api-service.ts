@@ -221,17 +221,22 @@ export class SolverApiService implements ISolverService {
         // Stretch the HTTP timeout beyond the solver timeout to avoid premature aborts.
         const solverTimeoutSec = params.timeout ?? 300;
         const httpTimeoutMs = (solverTimeoutSec + 30) * 2 * 1000;
+        const [yearStr, monthStr] =  toIsoDate(params.start).split("-");
 
+        const year = Number(yearStr);
+        const month = Number(monthStr);
         try {
             const result = await apiPost<object, ApiSolveResponse>(
                 this.baseUrl,
-                '/solve',
+                '/solve/',
                 {
-                    unit: params.unit,
-                    start_date: toIsoDate(params.start),
-                    end_date: toIsoDate(params.end),
-                    timeout: solverTimeoutSec,
-                    shared_pool_enabled: params.sharedPoolEnabled ?? false
+                    planning_unit_ids: params.unit,
+                    year: year,
+                    month: month
+                   // start_date: toIsoDate(params.start),
+                   // end_date: toIsoDate(params.end),
+                   // timeout: solverTimeoutSec,
+                   // shared_pool_enabled: params.sharedPoolEnabled ?? false
                 },
                 httpTimeoutMs
             );
