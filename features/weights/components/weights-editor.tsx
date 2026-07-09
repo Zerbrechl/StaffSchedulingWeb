@@ -5,7 +5,11 @@ import {WEIGHT_METADATA, Weights} from '@/src/entities/models/weights.model';
 import {Label} from '@/components/ui/label';
 import {Input} from '@/components/ui/input';
 import {Button} from '@/components/ui/button';
-import {Info, Save, Upload} from 'lucide-react';
+import {
+    Info,
+    // Save,
+    // Upload,
+} from 'lucide-react';
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,} from '@/components/ui/tooltip';
 import {
     AlertDialog,
@@ -158,6 +162,7 @@ export function WeightsEditor({weights, onSave, isSaving, caseId: caseIdProp}: W
             })}
 
             <div className="flex gap-2 justify-between pt-4 border-t sticky bottom-0 bg-background py-3">
+                {/*
                 <div className="flex gap-2">
                     <Button
                         variant="outline"
@@ -178,6 +183,8 @@ export function WeightsEditor({weights, onSave, isSaving, caseId: caseIdProp}: W
                         Als Template speichern
                     </Button>
                 </div>
+                */}
+                <div/>
                 <div className="flex gap-2">
                     <Button
                         variant="outline"
