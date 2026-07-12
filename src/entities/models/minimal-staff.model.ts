@@ -1,6 +1,6 @@
 import {z} from 'zod';
 
-export const ShiftTypeSchema = z.enum(['F', 'S', 'N']);
+export const ShiftTypeSchema = z.enum(['F', 'Z', 'S', 'N']);
 export type ShiftType = z.infer<typeof ShiftTypeSchema>;
 
 export const WeekDaySchema = z.enum(['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']);
@@ -11,6 +11,7 @@ export type EmployeeCategory = z.infer<typeof EmployeeCategorySchema>;
 
 export const DayRequirementsSchema = z.object({
     F: z.number(),
+    Z: z.number(),
     S: z.number(),
     N: z.number(),
 });
