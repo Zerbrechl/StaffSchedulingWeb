@@ -4,13 +4,13 @@ import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from '@/
 import {Badge} from '@/components/ui/badge';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
-import {CheckCircle2, ChevronDown, ChevronUp, XCircle} from 'lucide-react';
+import {CheckCircle2, ChevronDown, ChevronUp, Loader2, XCircle} from 'lucide-react';
 import {SolverJob} from '@/src/entities/models/solver.model';
 import {useState} from 'react';
 import {format} from 'date-fns';
 import {de} from 'date-fns/locale';
 
-function JobRow({job}: { job: SolverJob }) {
+function JobRow({job, onRefreshJob}: { job: SolverJob; onRefreshJob?: (job: SolverJob) => Promise<void> | void }) {
     const [expanded, setExpanded] = useState(false);
 
     const getCommandLabel = (type: string) => {
@@ -24,43 +24,60 @@ function JobRow({job}: { job: SolverJob }) {
         return labels[type] || type;
     };
 
+    const handleClick = async () => {
+        await onRefreshJob?.(job);
+        setExpanded(!expanded);
+    };
+
+    const renderStatus = () => {
+        if (job.status === 'accepted' || job.status === 'running') {
+            return (
+                <Badge variant="secondary">
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin"/>
+                    {job.status === 'accepted' ? 'Angenommen' : 'Läuft'}
+                </Badge>
+            );
+        }
+
+        if (job.status === 'completed' || job.status === 'succeeded') {
+            return job.type === 'solve-multiple' && job.metadata?.solutionsGenerated !== undefined && job.metadata?.expectedSolutions !== undefined ? (
+                job.metadata.solutionsGenerated < job.metadata.expectedSolutions ? (
+                    <Badge variant="default"
+                           className="bg-yellow-600 dark:bg-yellow-600 hover:bg-yellow-700 dark:hover:bg-yellow-700">
+                        <CheckCircle2 className="h-3 w-3 mr-1"/>
+                        Teilweise ({job.metadata.solutionsGenerated}/{job.metadata.expectedSolutions})
+                    </Badge>
+                ) : (
+                    <Badge variant="default"
+                           className="bg-green-600 dark:bg-green-600 hover:bg-green-700 dark:hover:bg-green-700">
+                        <CheckCircle2 className="h-3 w-3 mr-1"/>
+                        Erfolgreich
+                    </Badge>
+                )
+            ) : (
+                <Badge variant="default"
+                       className="bg-green-600 dark:bg-green-600 hover:bg-green-700 dark:hover:bg-green-700">
+                    <CheckCircle2 className="h-3 w-3 mr-1"/>
+                    Erfolgreich
+                </Badge>
+            );
+        }
+
+        return (
+            <Badge variant="destructive">
+                <XCircle className="h-3 w-3 mr-1"/>
+                Fehlgeschlagen
+            </Badge>
+        );
+    };
+
     return (
         <>
-            <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => setExpanded(!expanded)}>
+            <TableRow className="cursor-pointer hover:bg-muted/50" onClick={handleClick}>
                 <TableCell className="font-medium">
                     {getCommandLabel(job.type)}
                 </TableCell>
-                <TableCell>
-                    {job.status === 'completed' ? (
-                        job.type === 'solve-multiple' && job.metadata?.solutionsGenerated !== undefined && job.metadata?.expectedSolutions !== undefined ? (
-                            // Check if solve-multiple was only partially successful
-                            job.metadata.solutionsGenerated < job.metadata.expectedSolutions ? (
-                                <Badge variant="default"
-                                       className="bg-yellow-600 dark:bg-yellow-600 hover:bg-yellow-700 dark:hover:bg-yellow-700">
-                                    <CheckCircle2 className="h-3 w-3 mr-1"/>
-                                    Teilweise ({job.metadata.solutionsGenerated}/{job.metadata.expectedSolutions})
-                                </Badge>
-                            ) : (
-                                <Badge variant="default"
-                                       className="bg-green-600 dark:bg-green-600 hover:bg-green-700 dark:hover:bg-green-700">
-                                    <CheckCircle2 className="h-3 w-3 mr-1"/>
-                                    Erfolgreich
-                                </Badge>
-                            )
-                        ) : (
-                            <Badge variant="default"
-                                   className="bg-green-600 dark:bg-green-600 hover:bg-green-700 dark:hover:bg-green-700">
-                                <CheckCircle2 className="h-3 w-3 mr-1"/>
-                                Erfolgreich
-                            </Badge>
-                        )
-                    ) : (
-                        <Badge variant="destructive">
-                            <XCircle className="h-3 w-3 mr-1"/>
-                            Fehlgeschlagen
-                        </Badge>
-                    )}
-                </TableCell>
+                <TableCell>{renderStatus()}</TableCell>
                 <TableCell>
                     {format(new Date(job.createdAt), 'dd.MM.yyyy HH:mm', {locale: de})}
                 </TableCell>
@@ -92,6 +109,15 @@ function JobRow({job}: { job: SolverJob }) {
                   </pre>
                                 </div>
                             )}
+                            {job.error && (
+                                <div>
+                                    <p className="text-sm font-medium mb-1">Fehler:</p>
+                                    <pre
+                                        className="text-xs bg-background p-2 rounded overflow-auto max-h-40 wrap-break-word whitespace-pre-wrap">
+                    {job.error}
+                  </pre>
+                                </div>
+                            )}
                         </div>
                     </TableCell>
                 </TableRow>
@@ -102,9 +128,10 @@ function JobRow({job}: { job: SolverJob }) {
 
 interface JobHistoryTableProps {
     jobs: SolverJob[];
+    onRefreshJob?: (job: SolverJob) => Promise<void> | void;
 }
 
-export function JobHistoryTable({jobs}: JobHistoryTableProps) {
+export function JobHistoryTable({jobs, onRefreshJob}: JobHistoryTableProps) {
     return (
         <Card>
             <CardHeader>
@@ -132,7 +159,7 @@ export function JobHistoryTable({jobs}: JobHistoryTableProps) {
                             </TableHeader>
                             <TableBody>
                                 {jobs.map((job) => (
-                                    <JobRow key={job.id} job={job}/>
+                                    <JobRow key={job.id} job={job} onRefreshJob={onRefreshJob}/>
                                 ))}
                             </TableBody>
                         </Table>

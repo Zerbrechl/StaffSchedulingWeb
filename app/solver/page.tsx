@@ -1,5 +1,5 @@
 import {SolverPageClient} from './solver-page-client';
-import {getJobs, checkSolverHealth, getLastInsertedSolution} from '@/features/solver/solver.actions';
+import {checkSolverHealth, getLastInsertedSolution} from '@/features/solver/solver.actions';
 import {getWorkflowSession} from '@/src/infrastructure/services/workflow-session.service';
 import {getSelectedScheduleAction} from '@/features/schedule/schedule.actions';
 import {listAvailableCaseIdsForMonthAction} from '@/features/cases/cases.actions';
@@ -35,11 +35,10 @@ export default async function SolverPage({
     const activeCaseId =
         selectedCaseIds.find(id => availableCaseIds.includes(id)) ?? null;
 
-    const [configResult, jobsData, lastInsertedResult, selectedScheduleData] =
+    const [configResult, lastInsertedResult, selectedScheduleData] =
         activeCaseId
             ? await Promise.all([
                 checkSolverHealth(),
-                getJobs(activeCaseId, monthYear).catch(() => ({jobs: []})),
                 getLastInsertedSolution(activeCaseId, monthYear).catch(() => ({
                     success: true,
                     data: null,
@@ -50,7 +49,6 @@ export default async function SolverPage({
             ])
             : await Promise.all([
                 checkSolverHealth(),
-                Promise.resolve({jobs: []}),
                 Promise.resolve({success: true, data: null}),
                 Promise.resolve({solution: null}),
             ]);
@@ -61,7 +59,7 @@ export default async function SolverPage({
             monthYear={monthYear}
             availableCaseIds={availableCaseIds}
             initialConfigValidation={configResult.success ? configResult.data : null}
-            initialJobs={jobsData.jobs}
+            initialJobs={[]}
             initialLastInsertedSolution={
                 lastInsertedResult.success ? lastInsertedResult.data : null
             }

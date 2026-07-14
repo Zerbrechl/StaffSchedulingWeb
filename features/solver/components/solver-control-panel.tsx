@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import type {SolverExecOptions} from '@/features/solver/hooks/use-solver-operations';
 import {useSolverOperations} from '@/features/solver/hooks/use-solver-operations';
-import {SolverCommandType} from '@/src/entities/models/solver.model';
+import {SolverCommandType, SolverJob} from '@/src/entities/models/solver.model';
 import {ImportSolutionDialog} from '@/components/import-solution-dialog';
 import {ImportMultipleSolutionsDialog} from '@/components/import-multiple-solutions-dialog';
 
@@ -31,12 +31,13 @@ interface SolverControlPanelProps {
     selectedCaseIds?: number[];
     monthYear: string;
     onAfterOperation?: () => Promise<void>;
+    onSolveJobStarted?: (job: SolverJob) => void | Promise<void>;
     initialLastInsertedSolution?: import('@/src/entities/models/schedule.model').ScheduleSolutionRaw | null;
     initialPendingInsertSolution?: import('@/src/entities/models/schedule.model').ScheduleSolutionRaw | null;
     isLocked?: boolean;
 }
 
-export function SolverControlPanel({caseId, selectedCaseIds = [], monthYear, onAfterOperation, initialLastInsertedSolution, initialPendingInsertSolution, isLocked}: SolverControlPanelProps) {
+export function SolverControlPanel({caseId, selectedCaseIds = [], monthYear, onAfterOperation, onSolveJobStarted, initialLastInsertedSolution, initialPendingInsertSolution, isLocked}: SolverControlPanelProps) {
     const searchParams = useSearchParams();
     const pathname = usePathname();
     const router = useRouter();
@@ -98,7 +99,7 @@ export function SolverControlPanel({caseId, selectedCaseIds = [], monthYear, onA
         handleImport,
         pendingInsertSolution,
         lastInsertedSolution,
-    } = useSolverOperations({onAfterOperation, initialLastInsertedSolution: initialLastInsertedSolution ?? null, initialPendingInsertSolution: initialPendingInsertSolution ?? null});
+    } = useSolverOperations({onAfterOperation, onSolveJobStarted, initialLastInsertedSolution: initialLastInsertedSolution ?? null, initialPendingInsertSolution: initialPendingInsertSolution ?? null});
 
     const buildExecutionOptions = (targetCaseIds: number[]) => {
         if (selectedMonth === null || selectedYear === null) {
