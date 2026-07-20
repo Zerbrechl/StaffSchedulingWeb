@@ -13,7 +13,7 @@ import {Badge} from '@/components/ui/badge';
 import {ScrollArea} from '@/components/ui/scroll-area';
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
-import {Moon, Sun, Sunrise} from 'lucide-react';
+import {Clock, Moon, Sun, Sunrise} from 'lucide-react';
 import {
     EmployeeCategory,
     MinimalStaffRequirements,
@@ -44,6 +44,7 @@ const weekDays: { key: WeekDay; label: string; isWeekend: boolean }[] = [
 
 const shifts: { key: ShiftType; label: string; icon: React.ReactNode; color: string }[] = [
     {key: 'F', label: 'Frühdienst', icon: <Sunrise className="h-4 w-4"/>, color: 'text-amber-600'},
+    {key: 'Z', label: 'Zwischendienst', icon: <Clock className="h-4 w-4"/>, color: 'text-cyan-600'},
     {key: 'S', label: 'Spätdienst', icon: <Sun className="h-4 w-4"/>, color: 'text-orange-600'},
     {key: 'N', label: 'Nachtdienst', icon: <Moon className="h-4 w-4"/>, color: 'text-blue-600'},
 ];
@@ -105,7 +106,7 @@ export function ViewMinimalStaffTemplateDialog({
                                         <TableBody>
                                             {weekDays.map(({key: day, label: dayLabel, isWeekend}) => {
                                                 const dayReqs = template.content[category][day];
-                                                const total = dayReqs.F + dayReqs.S + dayReqs.N;
+                                                const total = dayReqs.F + dayReqs.Z + dayReqs.S + dayReqs.N;
                                                 return (
                                                     <TableRow key={day} className={cn(isWeekend && 'bg-muted/30')}>
                                                         <TableCell className="font-medium">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, {useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/navigation';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
@@ -36,10 +36,15 @@ import {ImportSolutionDialog} from '@/components/import-solution-dialog';
 import {ImportMultipleSolutionsDialog} from '@/components/import-multiple-solutions-dialog';
 import {TimeoutConfigDialog} from '@/components/timeout-config-dialog';
 import {JobHistoryTable} from '@/features/solver/components/job-history-table';
-import {getJobs} from '@/features/solver/solver.actions';
+import {checkSolveJob} from '@/features/solver/solver.actions';
+import {
+    getSolveJobHistoryKey,
+    readSolveJobHistory,
+    writeSolveJobHistory,
+} from '@/features/solver/solve-job-history-storage';
 import {useSolverOperations} from '@/features/solver/hooks/use-solver-operations';
 
-import type { SolverJob } from '@/src/entities/models/solver.model';
+import type { SolveParams, SolverJob } from '@/src/entities/models/solver.model';
 import type { SolverHealthResult } from '@/src/application/ports/solver.service';
 import type { ScheduleSolutionRaw } from '@/src/entities/models/schedule.model';
 
@@ -77,6 +82,8 @@ export function WorkflowPageClient({
 }: WorkflowPageClientProps) {
     const router = useRouter();
     const [jobs, setJobs] = useState<SolverJob[]>(initialJobs);
+    const planningUnitIds = useMemo(() => [caseId], [caseId]);
+    const storageKey = getSolveJobHistoryKey(monthYear, planningUnitIds);
     const [showFetchWarning, setShowFetchWarning] = useState(false);
     const [showDeleteWarning, setShowDeleteWarning] = useState(false);
     const [showInsertWarning, setShowInsertWarning] = useState(false);
@@ -93,14 +100,51 @@ export function WorkflowPageClient({
         'edit-wishes': {status: 'idle'},
     });
 
-    const refreshJobs = async () => {
+    const saveJobs = useCallback((nextJobs: SolverJob[]) => {
+        const lastJobs = writeSolveJobHistory(storageKey, planningUnitIds, nextJobs);
+        setJobs(lastJobs);
+    }, [planningUnitIds, storageKey]);
+
+    const refreshJob = useCallback(async (job: SolverJob) => {
+        if (job.type !== 'solve' || !job.backendJobId) return;
         try {
-            const data = await getJobs(caseId, monthYear);
-            setJobs(data.jobs);
+            const result = await checkSolveJob(caseId, job.params as SolveParams, job.backendJobId);
+            if (!result.success) return;
+            saveJobs(jobs.map(item => item.id === job.id ? result.data.job : item));
         } catch {
-            // silently fail
+            // keep stored job if the backend cannot be reached
         }
-    };
+    }, [caseId, jobs, saveJobs]);
+
+    const refreshJobs = useCallback(async () => {
+        const checkedJobs = await Promise.all(jobs.map(async job => {
+            if (job.type !== 'solve' || !job.backendJobId) return job;
+            const result = await checkSolveJob(caseId, job.params as SolveParams, job.backendJobId);
+            return result.success ? result.data.job : job;
+        }));
+        saveJobs(checkedJobs);
+    }, [caseId, jobs, saveJobs]);
+
+    const addJob = useCallback((job: SolverJob) => {
+        saveJobs([job, ...jobs.filter(item => item.id !== job.id)]);
+    }, [jobs, saveJobs]);
+
+    useEffect(() => {
+        const timeoutId = window.setTimeout(() => {
+            try {
+                setJobs(readSolveJobHistory(storageKey));
+            } catch {
+                setJobs([]);
+            }
+        }, 0);
+        return () => window.clearTimeout(timeoutId);
+    }, [storageKey]);
+
+    useEffect(() => {
+        if (jobs.length === 0) return;
+        const intervalId = setInterval(refreshJobs, 10_000);
+        return () => clearInterval(intervalId);
+    }, [jobs.length, refreshJobs]);
 
     const {
         isExecuting,
@@ -123,7 +167,7 @@ export function WorkflowPageClient({
         handleImport,
         pendingInsertSolution,
         lastInsertedSolution,
-    } = useSolverOperations({onAfterOperation: refreshJobs, initialLastInsertedSolution, initialPendingInsertSolution});
+    } = useSolverOperations({onAfterOperation: refreshJobs, onSolveJobStarted: addJob, initialLastInsertedSolution, initialPendingInsertSolution});
 
     const execOpts = {caseId, monthYear, start: isoStart, end: isoEnd};
 
@@ -393,7 +437,7 @@ export function WorkflowPageClient({
 
             {/* Job History Table */}
             <div className="mt-8">
-                <JobHistoryTable jobs={jobs}/>
+                <JobHistoryTable jobs={jobs} onRefreshJob={refreshJob}/>
             </div>
 
 

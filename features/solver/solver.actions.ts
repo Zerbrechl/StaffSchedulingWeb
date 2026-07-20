@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { getInjection } from '@/di/container';
+import { getBackendSolveJob, startBackendSolveJob } from '@/features/solver/solve-job-api';
 import type {
     DeleteParams,
     FetchParams,
@@ -47,6 +48,29 @@ export async function solverSolve(
     revalidatePath('/solver');
     revalidatePath('/workflow');
     return { success: true, data: result.data };
+}
+
+export async function startSolveJob(
+    caseId: number,
+    params: SolveParams
+): Promise<ActionResult<{ job: SolverJob }>> {
+    try {
+        return { success: true, data: await startBackendSolveJob(caseId, params) };
+    } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : String(error) };
+    }
+}
+
+export async function checkSolveJob(
+    caseId: number,
+    params: SolveParams,
+    jobId: string
+): Promise<ActionResult<{ job: SolverJob }>> {
+    try {
+        return { success: true, data: await getBackendSolveJob(caseId, params, jobId) };
+    } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : String(error) };
+    }
 }
 
 export async function solverSolveMultiple(

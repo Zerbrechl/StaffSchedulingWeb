@@ -1,5 +1,5 @@
 ﻿import {redirect} from 'next/navigation';
-import {getJobs, checkSolverHealth, getLastInsertedSolution} from '@/features/solver/solver.actions';
+import {checkSolverHealth, getLastInsertedSolution} from '@/features/solver/solver.actions';
 import {WorkflowPageClient} from './workflow-page-client';
 import {getWorkflowSession} from '@/src/infrastructure/services/workflow-session.service';
 import {getSelectedScheduleAction} from '@/features/schedule/schedule.actions';
@@ -27,9 +27,8 @@ export default async function WorkflowPage() {
     const isoStart = convertToISODate(startDate);
     const isoEnd = convertToISODate(endDate);
 
-    const [configResult, jobsData, lastInsertedResult, selectedScheduleData] = await Promise.all([
+    const [configResult, lastInsertedResult, selectedScheduleData] = await Promise.all([
         checkSolverHealth(),
-        getJobs(caseId, monthYear).catch(() => ({jobs: []})),
         getLastInsertedSolution(caseId, monthYear).catch(() => ({success: true, data: null})),
         getSelectedScheduleAction(caseId, monthYear).catch(() => ({solution: null})),
     ]);
@@ -46,7 +45,7 @@ export default async function WorkflowPage() {
             isoStart={isoStart}
             isoEnd={isoEnd}
             initialConfig={initialConfig}
-            initialJobs={jobsData.jobs}
+            initialJobs={[]}
             initialLastInsertedSolution={initialLastInsertedSolution}
             initialPendingInsertSolution={initialPendingInsertSolution}
         />
