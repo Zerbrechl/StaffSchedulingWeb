@@ -10,7 +10,7 @@ export const SolverCommandTypeSchema = z.enum([
 
 export type SolverCommandType = z.infer<typeof SolverCommandTypeSchema>;
 
-export const SolverJobStatusSchema = z.enum(['completed', 'failed']);
+export const SolverJobStatusSchema = z.enum(['accepted', 'running', 'succeeded', 'completed', 'failed']);
 export type SolverJobStatus = z.infer<typeof SolverJobStatusSchema>;
 
 export const SolverUnitParamSchema = z.union([
@@ -71,6 +71,7 @@ export type PythonCommandResult = z.infer<typeof PythonCommandResultSchema>;
 
 export const SolverJobSchema = z.object({
     id: z.string(),
+    backendJobId: z.string().optional(),
     type: SolverCommandTypeSchema,
     status: SolverJobStatusSchema,
     caseId: z.number(),
@@ -81,8 +82,9 @@ export const SolverJobSchema = z.object({
     // Generic error message supported by all solver implementations.
     error: z.string().optional(),
     createdAt: z.string(),
-    completedAt: z.string(),
+    completedAt: z.string().optional(),
     duration: z.number().optional(),
+    result: z.unknown().optional(),
     metadata: z.object({
         solutionsGenerated: z.number().optional(),
         expectedSolutions: z.number().optional(),

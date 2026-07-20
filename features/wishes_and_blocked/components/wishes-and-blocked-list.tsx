@@ -4,7 +4,7 @@ import {useMemo, useState} from 'react';
 import {WishesAndBlockedEmployee} from '@/src/entities/models/wishes-and-blocked.model';
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from '@/components/ui/table';
 import {Button} from '@/components/ui/button';
-import {Ban, Heart, Pencil, Search, Trash2} from 'lucide-react';
+import {Ban, Briefcase, Heart, Pencil, Search, Trash2} from 'lucide-react';
 import {Badge} from '@/components/ui/badge';
 import {Input} from '@/components/ui/input';
 
@@ -89,12 +89,23 @@ export function WishesAndBlockedList({
                                                 <div className="flex items-center gap-2">
                                                     <Heart className="h-4 w-4 text-blue-500"/>
                                                     <Badge variant="outline" className="bg-blue-100">
-                                                        {employee.wish_days.length} Gewünschte freie Tage
+                                                        {employee.wish_days?.length ?? 0} Gewünschte freie Tage
                                                     </Badge>
                                                 </div>
 
                                                 <Badge variant="outline" className="bg-blue-50 ml-6">
-                                                    {employee.wish_shifts.length} Gewünschte freie Schichten
+                                                    {employee.wish_shifts?.length ?? 0} Gewünschte freie Schichten
+                                                </Badge>
+
+                                                <div className="flex items-center gap-2">
+                                                    <Briefcase className="h-4 w-4 text-green-500"/>
+                                                    <Badge variant="outline" className="bg-green-100">
+                                                        {employee.work_days?.length ?? 0} Gewünschte Arbeitstage
+                                                    </Badge>
+                                                </div>
+
+                                                <Badge variant="outline" className="bg-green-50 ml-6">
+                                                    {employee.work_shifts?.length ?? 0} Gewünschte Arbeitsschichten
                                                 </Badge>
 
                                             </div>
@@ -104,12 +115,12 @@ export function WishesAndBlockedList({
                                                 <div className="flex items-center gap-2">
                                                     <Ban className="h-4 w-4 text-red-500"/>
                                                     <Badge variant="outline" className="bg-red-100">
-                                                        {employee.blocked_days.length} Blockierte Tage
+                                                        {employee.blocked_days?.length ?? 0} Blockierte Tage
                                                     </Badge>
                                                 </div>
 
                                                 <Badge variant="outline" className="bg-red-50 ml-6">
-                                                    {employee.blocked_shifts.length} Blockierte Schichten
+                                                    {employee.blocked_shifts?.length ?? 0} Blockierte Schichten
                                                 </Badge>
                                             </div>
                                         </TableCell>

@@ -1,13 +1,18 @@
 'use client';
 
-import {useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {usePathname, useRouter, useSearchParams} from 'next/navigation';
 import {Button} from '@/components/ui/button';
 import {ConfigValidator} from '@/features/solver/components/config-validator';
 import {SolverControlPanel} from '@/features/solver/components/solver-control-panel';
 import {JobHistoryTable} from '@/features/solver/components/job-history-table';
-import {getJobs} from '@/features/solver/solver.actions';
-import type {SolverJob} from '@/src/entities/models/solver.model';
+import {checkSolveJob} from '@/features/solver/solver.actions';
+import {
+    getSolveJobHistoryKey,
+    readSolveJobHistory,
+    writeSolveJobHistory,
+} from '@/features/solver/solve-job-history-storage';
+import type {SolveParams, SolverJob} from '@/src/entities/models/solver.model';
 import type {SolverHealthResult} from '@/src/application/ports/solver.service';
 import type {ScheduleSolutionRaw} from '@/src/entities/models/schedule.model';
 
@@ -52,6 +57,20 @@ export function SolverPageClient({
         );
     }, [searchParams]);
 
+    const selectedAvailableCaseIds = useMemo(
+        () => visibleCaseIds.filter(id => availableCaseIds.includes(id)),
+        [availableCaseIds, visibleCaseIds]
+    );
+
+    const selectedPlanningUnitIds = useMemo(
+        () => selectedAvailableCaseIds.length > 0 ? selectedAvailableCaseIds : caseId ? [caseId] : [],
+        [caseId, selectedAvailableCaseIds]
+    );
+
+    const storageKey = selectedPlanningUnitIds.length > 0
+        ? getSolveJobHistoryKey(monthYear, selectedPlanningUnitIds)
+        : null;
+
     const toggleCase = (selectedCaseId: number) => {
         const nextCaseIds = visibleCaseIds.includes(selectedCaseId)
             ? visibleCaseIds.filter(id => id !== selectedCaseId)
@@ -70,16 +89,57 @@ export function SolverPageClient({
         router.push(`${pathname}?${params.toString()}`);
     };
 
-    const refreshJobs = async () => {
-        if (!caseId) return;
+    const saveJobs = useCallback((nextJobs: SolverJob[]) => {
+        const lastJobs = storageKey
+            ? writeSolveJobHistory(storageKey, selectedPlanningUnitIds, nextJobs)
+            : nextJobs.slice(0, 10);
 
+        setJobs(lastJobs);
+    }, [selectedPlanningUnitIds, storageKey]);
+
+    const refreshJob = useCallback(async (job: SolverJob) => {
+        if (!caseId || job.type !== 'solve' || !job.backendJobId) return;
         try {
-            const data = await getJobs(caseId, monthYear);
-            setJobs(data.jobs);
+            const result = await checkSolveJob(caseId, job.params as SolveParams, job.backendJobId);
+            if (!result.success) return;
+            saveJobs(jobs.map(item => item.id === job.id ? result.data.job : item));
         } catch {
-            setJobs([]);
+            // keep stored job if the backend cannot be reached
         }
-    };
+    }, [caseId, jobs, saveJobs]);
+
+    const refreshJobs = useCallback(async () => {
+        if (!caseId) return;
+        const checkedJobs = await Promise.all(jobs.map(async job => {
+            if (job.type !== 'solve' || !job.backendJobId) return job;
+            const result = await checkSolveJob(caseId, job.params as SolveParams, job.backendJobId);
+            return result.success ? result.data.job : job;
+        }));
+        saveJobs(checkedJobs);
+    }, [caseId, jobs, saveJobs]);
+
+    const addJob = useCallback((job: SolverJob) => {
+        saveJobs([job, ...jobs.filter(item => item.id !== job.id)]);
+    }, [jobs, saveJobs]);
+
+    useEffect(() => {
+        if (!storageKey) return;
+        const timeoutId = window.setTimeout(() => {
+            const storedJobs = localStorage.getItem(storageKey);
+            try {
+                setJobs(storedJobs ? readSolveJobHistory(storageKey) : []);
+            } catch {
+                setJobs([]);
+            }
+        }, 0);
+        return () => window.clearTimeout(timeoutId);
+    }, [storageKey]);
+
+    useEffect(() => {
+        if (jobs.length === 0) return;
+        const intervalId = setInterval(refreshJobs, 10_000);
+        return () => clearInterval(intervalId);
+    }, [jobs.length, refreshJobs]);
 
     return (
         <div className="space-y-6 py-6">
@@ -92,7 +152,7 @@ export function SolverPageClient({
 
             <div className="flex flex-wrap gap-2">
                 {availableCaseIds.map(availableCaseId => {
-                    const active = visibleCaseIds.includes(availableCaseId);
+                    const active = selectedAvailableCaseIds.includes(availableCaseId);
 
                     return (
                         <Button
@@ -119,16 +179,17 @@ export function SolverPageClient({
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <SolverControlPanel
                         caseId={caseId}
-                        selectedCaseIds={visibleCaseIds}
+                        selectedCaseIds={selectedAvailableCaseIds}
                         monthYear={monthYear}
                         onAfterOperation={refreshJobs}
+                        onSolveJobStarted={addJob}
                         initialLastInsertedSolution={initialLastInsertedSolution}
                         initialPendingInsertSolution={initialPendingInsertSolution}
                         isLocked={isLocked}
                     />
 
                     <div className="space-y-6">
-                        <JobHistoryTable jobs={jobs} />
+                        <JobHistoryTable jobs={jobs} onRefreshJob={refreshJob} />
                     </div>
                 </div>
             )}

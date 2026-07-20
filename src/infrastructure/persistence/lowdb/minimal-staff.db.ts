@@ -6,6 +6,7 @@ import {getSolverApiConfig} from "@/lib/config/app-config";
  */
 const getDefaultDayRequirements = (): DayRequirements => ({
     F: 0,
+    Z: 0,
     S: 0,
     N: 0,
 });

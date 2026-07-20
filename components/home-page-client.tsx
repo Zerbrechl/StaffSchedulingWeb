@@ -4,7 +4,14 @@ import Link from 'next/link';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
-import {ArrowRight, Calendar, CalendarRangeIcon, ClockFading, Users, Wand2} from 'lucide-react';
+import {
+    ArrowRight,
+    Calendar,
+    // CalendarRangeIcon,
+    ClockFading,
+    Users,
+    Wand2,
+} from 'lucide-react';
 
 interface HomePageClientProps {
     caseSearch: string;
@@ -22,14 +29,14 @@ export function HomePageClient({caseSearch, isWorkflowMode}: HomePageClientProps
             color: 'text-blue-500',
             bgColor: 'bg-blue-50',
         },
-        {
-            title: 'Globale Wünsche & Blockierungen',
-            description: 'Verwalte allgemeine Wünsche und Blockierungen für alle Mitarbeiter',
-            icon: CalendarRangeIcon,
-            href: `/global-wishes-and-blocked${caseSearch}`,
-            color: 'text-indigo-500',
-            bgColor: 'bg-indigo-50',
-        },
+        // {
+        //     title: 'Globale Wünsche & Blockierungen',
+        //     description: 'Verwalte allgemeine Wünsche und Blockierungen für alle Mitarbeiter',
+        //     icon: CalendarRangeIcon,
+        //     href: `/global-wishes-and-blocked${caseSearch}`,
+        //     color: 'text-indigo-500',
+        //     bgColor: 'bg-indigo-50',
+        // },
         {
             title: 'Wünsche & Blockierungen',
             description: 'Verwalte Mitarbeiterwünsche und Blockierungen',

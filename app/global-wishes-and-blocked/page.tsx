@@ -2,8 +2,7 @@ import {GlobalWishesAndBlockedPageClient} from './global-wishes-and-blocked-page
 import {getAllGlobalWishesAction} from '@/features/global_wishes_and_blocked/global-wishes-and-blocked.actions';
 import {getAllEmployeesAction} from '@/features/employees/employees.actions';
 import {listGlobalWishesTemplatesAction} from '@/features/templates/global-wishes-templates.actions';
-import {listCasesAction} from '@/features/cases/cases.actions';
-import {CaseUnit} from '@/src/entities/models/case.model';
+import {listAvailableCaseIdsForMonthAction} from '@/features/cases/cases.actions';
 import {WishesAndBlockedEmployee} from '@/src/entities/models/wishes-and-blocked.model';
 import {Employee} from '@/src/entities/models/employee.model';
 import {TemplateSummary} from '@/src/entities/models/template.model';
@@ -54,13 +53,12 @@ export default async function GlobalWishesAndBlockedPage({
             aus</div>;
     }
 
-    const {units} = await listCasesAction();
-    const availableCaseIds = units
-        .filter((unit: CaseUnit) => unit.months.includes(monthYear))
-        .map(unit => unit.unitId);
+    const availableCaseIds = await listAvailableCaseIdsForMonthAction(monthYear);
+
+    const selectedCaseIds = caseIds.filter(id => availableCaseIds.includes(id));
 
     const globalWishesResults: GlobalWishesResult[] = await Promise.all(
-        caseIds.map(async caseId => {
+        selectedCaseIds.map(async caseId => {
             try {
                 const [employees, currentEmployees, templates] = await Promise.all([
                     getAllGlobalWishesAction(caseId, monthYear),

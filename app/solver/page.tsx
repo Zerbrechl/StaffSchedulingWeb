@@ -1,9 +1,8 @@
 import {SolverPageClient} from './solver-page-client';
-import {getJobs, checkSolverHealth, getLastInsertedSolution} from '@/features/solver/solver.actions';
+import {checkSolverHealth, getLastInsertedSolution} from '@/features/solver/solver.actions';
 import {getWorkflowSession} from '@/src/infrastructure/services/workflow-session.service';
 import {getSelectedScheduleAction} from '@/features/schedule/schedule.actions';
-import {listCasesAction} from '@/features/cases/cases.actions';
-import {CaseUnit} from '@/src/entities/models/case.model';
+import {listAvailableCaseIdsForMonthAction} from '@/features/cases/cases.actions';
 
 export default async function SolverPage({
                                              searchParams,
@@ -31,21 +30,15 @@ export default async function SolverPage({
         )
     );
 
-    const {units} = await listCasesAction();
-
-    const availableCaseIds = units
-        .filter((unit: CaseUnit) => unit.months.includes(monthYear))
-        .map(unit => unit.unitId)
-        .sort((a, b) => a - b);
+    const availableCaseIds = await listAvailableCaseIdsForMonthAction(monthYear);
 
     const activeCaseId =
         selectedCaseIds.find(id => availableCaseIds.includes(id)) ?? null;
 
-    const [configResult, jobsData, lastInsertedResult, selectedScheduleData] =
+    const [configResult, lastInsertedResult, selectedScheduleData] =
         activeCaseId
             ? await Promise.all([
                 checkSolverHealth(),
-                getJobs(activeCaseId, monthYear).catch(() => ({jobs: []})),
                 getLastInsertedSolution(activeCaseId, monthYear).catch(() => ({
                     success: true,
                     data: null,
@@ -56,7 +49,6 @@ export default async function SolverPage({
             ])
             : await Promise.all([
                 checkSolverHealth(),
-                Promise.resolve({jobs: []}),
                 Promise.resolve({success: true, data: null}),
                 Promise.resolve({solution: null}),
             ]);
@@ -67,7 +59,7 @@ export default async function SolverPage({
             monthYear={monthYear}
             availableCaseIds={availableCaseIds}
             initialConfigValidation={configResult.success ? configResult.data : null}
-            initialJobs={jobsData.jobs}
+            initialJobs={[]}
             initialLastInsertedSolution={
                 lastInsertedResult.success ? lastInsertedResult.data : null
             }

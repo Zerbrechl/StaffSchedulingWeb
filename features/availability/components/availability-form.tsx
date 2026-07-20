@@ -37,26 +37,41 @@ interface AvailabilityFormProps {
 function convertToDayData(
     year: number,
     month: number,
-    availableDays: number[],
-    unavailableDays: number[]
+    unavailableDays: number[],
+    unavailableShifts: [number, string][]
 ): DayData[] {
     const dayDataMap = new Map<number, DayData>();
-
-    availableDays.forEach((day) => {
-        const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        dayDataMap.set(day, {
-            date,
-            categoryId: 'available',
-            events: [],
-        });
-    });
 
     unavailableDays.forEach((day) => {
         const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         dayDataMap.set(day, {
             date,
             categoryId: 'unavailable',
-            events: [],
+            events: ['F', 'S', 'N'].map((shiftCode) => ({
+                id: `${date}-unavailable-${shiftCode}`,
+                title: shiftCode,
+                categoryId: 'unavailable-shift',
+            })),
+        });
+    });
+
+    unavailableShifts.forEach(([day, shiftCode]) => {
+        const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const existing = dayDataMap.get(day);
+        const events = existing?.events || [];
+
+        if (events.some((event) => event.categoryId === 'unavailable-shift' && event.title === shiftCode)) {
+            return;
+        }
+
+        dayDataMap.set(day, {
+            date,
+            categoryId: existing?.categoryId,
+            events: [...events, {
+                id: `${date}-unavailable-${shiftCode}-${Date.now()}`,
+                title: shiftCode,
+                categoryId: 'unavailable-shift',
+            }],
         });
     });
 
@@ -64,26 +79,44 @@ function convertToDayData(
 }
 
 function convertFromDayData(dayData: DayData[]): {
-    availableDays: number[];
     unavailableDays: number[];
+    unavailableShifts: [number, string][];
 } {
-    const availableDays: number[] = [];
     const unavailableDays: number[] = [];
+    const unavailableShifts: [number, string][] = [];
+
+    const SHIFT_ORDER = ['F', 'S', 'N'];
+    const shiftPriority = (shift: string) => {
+        const index = SHIFT_ORDER.indexOf(shift);
+        return index === -1 ? 999 : index;
+    };
 
     dayData.forEach((data) => {
         const day = parseInt(data.date.split('-')[2], 10);
 
-        if (data.categoryId === 'available') {
-            availableDays.push(day);
-        } else if (data.categoryId === 'unavailable') {
+        if (data.categoryId === 'unavailable') {
             unavailableDays.push(day);
         }
+
+        data.events.forEach((event) => {
+            if (event.categoryId === 'unavailable-shift') {
+                unavailableShifts.push([day, event.title]);
+            }
+        });
     });
 
-    availableDays.sort((a, b) => a - b);
     unavailableDays.sort((a, b) => a - b);
+    unavailableShifts.sort((a, b) => a[0] - b[0] || shiftPriority(a[1]) - shiftPriority(b[1]));
 
-    return {availableDays, unavailableDays};
+    const uniqueUnavailableDays = unavailableDays.filter((day, index, days) => index === 0 || day !== days[index - 1]);
+    const uniqueUnavailableShifts = unavailableShifts.filter((shift, index, shifts) =>
+        index === 0 || !(shift[0] === shifts[index - 1][0] && shift[1] === shifts[index - 1][1])
+    );
+
+    return {
+        unavailableDays: uniqueUnavailableDays,
+        unavailableShifts: uniqueUnavailableShifts,
+    };
 }
 
 export function AvailabilityForm({
@@ -125,15 +158,17 @@ export function AvailabilityForm({
         convertToDayData(
             year,
             month,
-            employee?.availability_days || [],
-            employee?.unavailability_days || []
+            employee?.unavailability_days || [],
+            employee?.unavailability_shifts || []
         )
     );
-    const {availableDays, unavailableDays} = convertFromDayData(calendarData);
-    const neutralDaysCount = dayCount - availableDays.length - unavailableDays.length;
+    const {unavailableDays, unavailableShifts} = convertFromDayData(calendarData);
+    const neutralDaysCount = dayCount - unavailableDays.length;
     const dayCategories = [
-        {id: 'available', name: 'Verfügbar', color: '#bbf7d0'},
-        {id: 'unavailable', name: 'Nicht verfügbar', color: '#fecaca'},
+        {id: 'unavailable', name: 'Nicht verfügbarer Tag', color: '#fecaca'},
+    ];
+    const eventCategories = [
+        {id: 'unavailable-shift', name: 'Nicht verfügbare Schicht', color: '#fecaca'},
     ];
 
     const handleFormSubmit = () => {
@@ -143,8 +178,8 @@ export function AvailabilityForm({
             key: selectedEmployee.key,
             firstname: selectedEmployee.firstname,
             name: selectedEmployee.name,
-            availability_days: availableDays,
             unavailability_days: unavailableDays,
+            unavailability_shifts: unavailableShifts,
         });
     };
 
@@ -196,16 +231,16 @@ export function AvailabilityForm({
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t">
                                 <div className="text-center">
-                                    <div className="text-2xl font-bold text-green-600">{availableDays.length}</div>
-                                    <div className="text-xs text-muted-foreground">Verfügbare Tage</div>
-                                </div>
-                                <div className="text-center">
                                     <div className="text-2xl font-bold text-red-600">{unavailableDays.length}</div>
                                     <div className="text-xs text-muted-foreground">Nicht verfügbare Tage</div>
                                 </div>
                                 <div className="text-center">
+                                    <div className="text-2xl font-bold text-red-400">{unavailableShifts.length}</div>
+                                    <div className="text-xs text-muted-foreground">Nicht verfügbare Schichten</div>
+                                </div>
+                                <div className="text-center">
                                     <div className="text-2xl font-bold text-slate-500">{neutralDaysCount}</div>
-                                    <div className="text-xs text-muted-foreground">Neutrale Tage</div>
+                                    <div className="text-xs text-muted-foreground">Nicht ausgewählte Tage</div>
                                 </div>
                             </div>
                         </CardContent>
@@ -218,7 +253,7 @@ export function AvailabilityForm({
                                 {isGlobal ? `Wochenkalender` : `Monatskalender`}
                             </CardTitle>
                             <CardDescription>
-                                Klicke auf einen Tag, um Verfügbarkeit zu verwalten
+                                Klicke auf einen Tag, um nicht verfügbare Tage oder Schichten zu verwalten
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -226,13 +261,19 @@ export function AvailabilityForm({
                                 month={month}
                                 year={year}
                                 categories={dayCategories}
-                                eventCategories={[]}
+                                eventCategories={eventCategories}
                                 initialDayData={calendarData}
                                 onDayDataChange={setCalendarData}
+                                maxVisibleEvents={3}
                                 showLegend={true}
                                 showCategoryTitle={false}
                                 view={isGlobal ? 'week' : 'month'}
-                                allowedEventTitles={[]}
+                                allowedEventTitles={['F', 'S', 'N']}
+                                availabilityShiftRule={{
+                                    categoryId: 'unavailable',
+                                    eventCategoryId: 'unavailable-shift',
+                                    eventTitles: ['F', 'S', 'N'],
+                                }}
                             />
                         </CardContent>
                     </Card>

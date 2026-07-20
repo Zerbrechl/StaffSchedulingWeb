@@ -40,6 +40,8 @@ function convertToDayData(
     month: number,
     wishDays: number[],
     wishShifts: [number, string][],
+    workDays: number[],
+    workShifts: [number, string][],
     blockedDays: number[],
     blockedShifts: [number, string][]
 ): DayData[] {
@@ -52,6 +54,17 @@ function convertToDayData(
             date,
             categoryId: 'wish',
             events: dayDataMap.get(day)?.events || [],
+        });
+    });
+
+    // Add work days
+    workDays.forEach(day => {
+        const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const existing = dayDataMap.get(day);
+        dayDataMap.set(day, {
+            date,
+            categoryId: 'work',
+            events: existing?.events || [],
         });
     });
 
@@ -83,6 +96,23 @@ function convertToDayData(
         });
     });
 
+    // Add work shifts as events
+    workShifts.forEach(([day, shiftCode]) => {
+        const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const existing = dayDataMap.get(day);
+        const events = existing?.events || [];
+
+        dayDataMap.set(day, {
+            date,
+            categoryId: existing?.categoryId,
+            events: [...events, {
+                id: `${date}-work-${shiftCode}-${Date.now()}`,
+                title: shiftCode,
+                categoryId: 'work-shift',
+            }],
+        });
+    });
+
     // Add blocked shifts as events
     blockedShifts.forEach(([day, shiftCode]) => {
         const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -107,11 +137,15 @@ function convertToDayData(
 function convertFromDayData(dayData: DayData[]): {
     wishDays: number[];
     wishShifts: [number, string][];
+    workDays: number[];
+    workShifts: [number, string][];
     blockedDays: number[];
     blockedShifts: [number, string][];
 } {
     const wishDays: number[] = [];
     const wishShifts: [number, string][] = [];
+    const workDays: number[] = [];
+    const workShifts: [number, string][] = [];
     const blockedDays: number[] = [];
     const blockedShifts: [number, string][] = [];
 
@@ -126,6 +160,8 @@ function convertFromDayData(dayData: DayData[]): {
 
         if (data.categoryId === 'wish') {
             wishDays.push(day);
+        } else if (data.categoryId === 'work') {
+            workDays.push(day);
         } else if (data.categoryId === 'blocked') {
             blockedDays.push(day);
         }
@@ -133,6 +169,8 @@ function convertFromDayData(dayData: DayData[]): {
         data.events.forEach(event => {
             if (event.categoryId === 'wish-shift') {
                 wishShifts.push([day, event.title]);
+            } else if (event.categoryId === 'work-shift') {
+                workShifts.push([day, event.title]);
             } else if (event.categoryId === 'blocked-shift') {
                 blockedShifts.push([day, event.title]);
             }
@@ -141,18 +179,28 @@ function convertFromDayData(dayData: DayData[]): {
 
     // Sort by day ASC, then by canonical shift order (F, S, N)
     wishShifts.sort((a, b) => a[0] - b[0] || shiftPriority(a[1]) - shiftPriority(b[1]));
+    workShifts.sort((a, b) => a[0] - b[0] || shiftPriority(a[1]) - shiftPriority(b[1]));
     blockedShifts.sort((a, b) => a[0] - b[0] || shiftPriority(a[1]) - shiftPriority(b[1]));
 
     // Remove duplicates (same day + same shift)
     const dedupePairs = (arr: [number, string][]) => arr.filter((v, i, a) => i === 0 || !(v[0] === a[i - 1][0] && v[1] === a[i - 1][1]));
     const uniqueWishShifts = dedupePairs(wishShifts);
+    const uniqueWorkShifts = dedupePairs(workShifts);
     const uniqueBlockedShifts = dedupePairs(blockedShifts);
 
     // Also sort days uniquely
     wishDays.sort((a, b) => a - b);
+    workDays.sort((a, b) => a - b);
     blockedDays.sort((a, b) => a - b);
 
-    return {wishDays, wishShifts: uniqueWishShifts, blockedDays, blockedShifts: uniqueBlockedShifts};
+    return {
+        wishDays: Array.from(new Set(wishDays)),
+        wishShifts: uniqueWishShifts,
+        workDays: Array.from(new Set(workDays)),
+        workShifts: uniqueWorkShifts,
+        blockedDays: Array.from(new Set(blockedDays)),
+        blockedShifts: uniqueBlockedShifts,
+    };
 }
 
 export function WishesAndBlockedForm({
@@ -197,6 +245,8 @@ export function WishesAndBlockedForm({
             month,
             employee?.wish_days || [],
             employee?.wish_shifts || [],
+            employee?.work_days || [],
+            employee?.work_shifts || [],
             employee?.blocked_days || [],
             employee?.blocked_shifts || []
         )
@@ -205,19 +255,21 @@ export function WishesAndBlockedForm({
     // Categories for day types (preferred day, blocked day)
     const dayCategories = [
         {id: 'wish', name: 'Gewünschter freier Tag', color: '#60a5fa'},
+        {id: 'work', name: 'Gewünschte Arbeitstag', color: '#22c55e'},
         {id: 'blocked', name: 'Blockierter Tag', color: '#dc2626'},
     ];
 
     // Categories for shifts
     const eventCategories = [
         {id: 'wish-shift', name: 'Gewünschte freie Schicht', color: '#bfdbfe'},
+        {id: 'work-shift', name: 'Gewünschte Arbeitsschicht', color: '#bbf7d0'},
         {id: 'blocked-shift', name: 'Blockierte Schicht', color: '#fecaca'},
     ];
 
     const handleFormSubmit = () => {
         if (!selectedEmployee) return;
 
-        const {wishDays, wishShifts, blockedDays, blockedShifts} = convertFromDayData(calendarData);
+        const {wishDays, wishShifts, workDays, workShifts, blockedDays, blockedShifts} = convertFromDayData(calendarData);
 
         onSubmit({
             key: selectedEmployee.key,
@@ -225,6 +277,8 @@ export function WishesAndBlockedForm({
             name: selectedEmployee.name,
             wish_days: wishDays,
             wish_shifts: wishShifts,
+            work_days: workDays,
+            work_shifts: workShifts,
             blocked_days: blockedDays,
             blocked_shifts: blockedShifts,
         });
@@ -243,6 +297,8 @@ export function WishesAndBlockedForm({
     const stats = convertFromDayData(calendarData);
     const wishDaysCount = stats.wishDays.length;
     const wishShiftsCount = stats.wishShifts.length;
+    const workDaysCount = stats.workDays.length;
+    const workShiftsCount = stats.workShifts.length;
     const blockedDaysCount = stats.blockedDays.length;
     const blockedShiftsCount = stats.blockedShifts.length;
 
@@ -299,6 +355,14 @@ export function WishesAndBlockedForm({
                                     <div className="text-xs text-muted-foreground">Gewünschte freie Schichten</div>
                                 </div>
                                 <div className="text-center">
+                                    <div className="text-2xl font-bold text-green-600">{workDaysCount}</div>
+                                    <div className="text-xs text-muted-foreground">Gewünschte Arbeitstage</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-2xl font-bold text-green-400">{workShiftsCount}</div>
+                                    <div className="text-xs text-muted-foreground">Gewünschte Arbeitsschichten</div>
+                                </div>
+                                <div className="text-center">
                                     <div className="text-2xl font-bold text-red-600">{blockedDaysCount}</div>
                                     <div className="text-xs text-muted-foreground">Blockierte Tage</div>
                                 </div>
@@ -333,6 +397,23 @@ export function WishesAndBlockedForm({
                                 showLegend={true}
                                 view={isGlobal ? 'week' : 'month'}
                                 allowedEventTitles={['F', 'S', 'N']}
+                                wishShiftRules={[
+                                    {
+                                        categoryId: 'wish',
+                                        eventCategoryId: 'wish-shift',
+                                        eventTitles: ['F', 'S', 'N'],
+                                    },
+                                    {
+                                        categoryId: 'work',
+                                        eventCategoryId: 'work-shift',
+                                        eventTitles: ['F', 'S', 'N'],
+                                    },
+                                    {
+                                        categoryId: 'blocked',
+                                        eventCategoryId: 'blocked-shift',
+                                        eventTitles: ['F', 'S', 'N'],
+                                    },
+                                ]}
                             />
                         </CardContent>
                     </Card>

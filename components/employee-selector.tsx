@@ -83,9 +83,13 @@ export function EmployeeSelector({
             <PopoverContent className="w-[min(400px,calc(95vw-2rem))] p-0" align="start">
                 <Command>
                     <CommandInput placeholder="Mitarbeiter suchen..."/>
-                    <CommandList className="max-h-[40vh] overflow-y-auto overscroll-contain">
+                    <CommandList
+                        className="h-[min(360px,50vh)] max-h-[50vh] overflow-y-scroll overscroll-contain"
+                        onWheel={(event) => event.stopPropagation()}
+                        onTouchMove={(event) => event.stopPropagation()}
+                    >
                         <CommandEmpty>Keine Mitarbeiter gefunden.</CommandEmpty>
-                        <CommandGroup>
+                        <CommandGroup className="overflow-visible">
                             {displayEmployees.map((employee) => (
                                 <CommandItem
                                     key={employee.key}

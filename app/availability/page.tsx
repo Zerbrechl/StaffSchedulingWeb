@@ -1,8 +1,7 @@
 import {AvailabilityPageClient} from './availability-page-client';
 import {getAllAvailabilityAction} from '@/features/availability/availability.actions';
-import {listCasesAction} from '@/features/cases/cases.actions';
+import {listAvailableCaseIdsForMonthAction} from '@/features/cases/cases.actions';
 import type {AvailabilityEmployee} from '@/src/entities/models/availability.model';
-import type {CaseUnit} from '@/src/entities/models/case.model';
 
 interface AvailabilityCaseData {
     caseId: number;
@@ -42,13 +41,12 @@ export default async function AvailabilityPage({
         return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Monat aus</div>;
     }
 
-    const {units} = await listCasesAction();
-    const availableCaseIds = units
-        .filter((unit: CaseUnit) => unit.months.includes(monthYear))
-        .map(unit => unit.unitId);
+    const availableCaseIds = await listAvailableCaseIdsForMonthAction(monthYear);
+
+    const selectedCaseIds = caseIds.filter(id => availableCaseIds.includes(id));
 
     const results: AvailabilityResult[] = await Promise.all(
-        caseIds.map(async caseId => {
+        selectedCaseIds.map(async caseId => {
             try {
                 return {
                     caseId,

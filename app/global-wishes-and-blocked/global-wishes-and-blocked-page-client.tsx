@@ -224,10 +224,12 @@ function GlobalWishesAndBlockedCaseCard({
                 key: emp.key,
                 firstname: emp.firstname,
                 name: emp.name,
-                wish_days: emp.wish_days,
-                wish_shifts: emp.wish_shifts,
-                blocked_days: emp.blocked_days,
-                blocked_shifts: emp.blocked_shifts,
+                wish_days: emp.wish_days ?? [],
+                wish_shifts: emp.wish_shifts ?? [],
+                work_days: emp.work_days ?? [],
+                work_shifts: emp.work_shifts ?? [],
+                blocked_days: emp.blocked_days ?? [],
+                blocked_shifts: emp.blocked_shifts ?? [],
             })),
         };
 

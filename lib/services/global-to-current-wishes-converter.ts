@@ -38,31 +38,45 @@ export function generateMonthlyDataFromWeeklyData(weeklyEmployee: WishesAndBlock
         name: weeklyEmployee.name,
         wish_days: [],
         wish_shifts: [],
+        work_days: [],
+        work_shifts: [],
         blocked_days: [],
         blocked_shifts: []
     };
 
-    // Expand wished and blocked weekdays into concrete calendar days.
-    weeklyEmployee.wish_days.forEach(weekday => {
+    // Expand weekly settings into concrete calendar days.
+    (weeklyEmployee.wish_days ?? []).forEach(weekday => {
         if (weekday >= 1 && weekday <= 7) {
             monthlyEmployee.wish_days.push(...daysByWeekday[weekday - 1]);
         }
     });
-    weeklyEmployee.blocked_days.forEach(weekday => {
+    (weeklyEmployee.work_days ?? []).forEach(weekday => {
+        if (weekday >= 1 && weekday <= 7) {
+            monthlyEmployee.work_days.push(...daysByWeekday[weekday - 1]);
+        }
+    });
+    (weeklyEmployee.blocked_days ?? []).forEach(weekday => {
         if (weekday >= 1 && weekday <= 7) {
             monthlyEmployee.blocked_days.push(...daysByWeekday[weekday - 1]);
         }
     });
 
-    // Expand wished and blocked shifts into concrete day-shift pairs.
-    weeklyEmployee.wish_shifts.forEach(([weekday, shift]) => {
+    // Expand weekly shift settings into concrete day-shift pairs.
+    (weeklyEmployee.wish_shifts ?? []).forEach(([weekday, shift]) => {
         if (weekday >= 1 && weekday <= 7) {
             daysByWeekday[weekday - 1].forEach(day => {
                 monthlyEmployee.wish_shifts.push([day, shift]);
             });
         }
     });
-    weeklyEmployee.blocked_shifts.forEach(([weekday, shift]) => {
+    (weeklyEmployee.work_shifts ?? []).forEach(([weekday, shift]) => {
+        if (weekday >= 1 && weekday <= 7) {
+            daysByWeekday[weekday - 1].forEach(day => {
+                monthlyEmployee.work_shifts.push([day, shift]);
+            });
+        }
+    });
+    (weeklyEmployee.blocked_shifts ?? []).forEach(([weekday, shift]) => {
         if (weekday >= 1 && weekday <= 7) {
             daysByWeekday[weekday - 1].forEach(day => {
                 monthlyEmployee.blocked_shifts.push([day, shift]);
@@ -78,11 +92,13 @@ export function generateMonthlyDataFromWeeklyData(weeklyEmployee: WishesAndBlock
     };
 
     monthlyEmployee.wish_shifts.sort((a, b) => a[0] - b[0] || shiftPriority(a[1]) - shiftPriority(b[1]));
+    monthlyEmployee.work_shifts.sort((a, b) => a[0] - b[0] || shiftPriority(a[1]) - shiftPriority(b[1]));
     monthlyEmployee.blocked_shifts.sort((a, b) => a[0] - b[0] || shiftPriority(a[1]) - shiftPriority(b[1]));
 
     // dedupe (same day + same shift)
     const dedupe = (arr: [number, string][]) => arr.filter((v, i, a) => i === 0 || !(v[0] === a[i - 1][0] && v[1] === a[i - 1][1]));
     monthlyEmployee.wish_shifts = dedupe(monthlyEmployee.wish_shifts);
+    monthlyEmployee.work_shifts = dedupe(monthlyEmployee.work_shifts);
     monthlyEmployee.blocked_shifts = dedupe(monthlyEmployee.blocked_shifts);
 
     return monthlyEmployee;
@@ -103,11 +119,31 @@ export function generateMonthlyAvailabilityFromWeeklyData(
         )
     ).sort((a, b) => a - b);
 
+    const expandShiftWeekdays = (weekdayShifts: [number, string][]) => {
+        const shifts = weekdayShifts.flatMap(([weekday, shift]) => (
+            weekday >= 1 && weekday <= 7
+                ? daysByWeekday[weekday - 1].map((day): [number, string] => [day, shift])
+                : []
+        ));
+
+        const SHIFT_ORDER = ['F', 'S', 'N'];
+        const shiftPriority = (shift: string) => {
+            const index = SHIFT_ORDER.indexOf(shift);
+            return index === -1 ? 999 : index;
+        };
+
+        shifts.sort((a, b) => a[0] - b[0] || shiftPriority(a[1]) - shiftPriority(b[1]));
+
+        return shifts.filter((shift, index, sortedShifts) =>
+            index === 0 || !(shift[0] === sortedShifts[index - 1][0] && shift[1] === sortedShifts[index - 1][1])
+        );
+    };
+
     return {
         key: weeklyEmployee.key,
         firstname: weeklyEmployee.firstname,
         name: weeklyEmployee.name,
-        availability_days: expandWeekdays(weeklyEmployee.availability_days),
         unavailability_days: expandWeekdays(weeklyEmployee.unavailability_days ?? []),
+        unavailability_shifts: expandShiftWeekdays(weeklyEmployee.unavailability_shifts ?? []),
     };
 }

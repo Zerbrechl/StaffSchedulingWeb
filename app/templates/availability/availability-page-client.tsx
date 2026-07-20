@@ -193,10 +193,12 @@ export function AvailabilityTemplatesPageClient({caseId, templates}: Availabilit
                                             </div>
                                             <div className="space-y-1 text-sm text-muted-foreground">
                                                 <div>
-                                                    Verfügbar: {employee.availability_days.length > 0 ? employee.availability_days.join(', ') : 'Keine'}
+                                                    Nicht verfügbare Tage: {(employee.unavailability_days?.length ?? 0) > 0 ? employee.unavailability_days?.join(', ') : 'Keine'}
                                                 </div>
                                                 <div>
-                                                    Nicht verfügbar: {(employee.unavailability_days?.length ?? 0) > 0 ? employee.unavailability_days?.join(', ') : 'Keine'}
+                                                    Nicht verfügbare Schichten: {(employee.unavailability_shifts?.length ?? 0) > 0
+                                                    ? employee.unavailability_shifts?.map(([day, shift]) => `${day}-${shift}`).join(', ')
+                                                    : 'Keine'}
                                                 </div>
                                             </div>
                                         </div>

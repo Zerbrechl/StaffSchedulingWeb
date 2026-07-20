@@ -57,6 +57,8 @@ export class LowdbWishesAndBlockedRepository implements IWishesAndBlockedReposit
                 name: globalEntry.name,
                 wish_days: monthlyData.wish_days,
                 wish_shifts: monthlyData.wish_shifts,
+                work_days: monthlyData.work_days,
+                work_shifts: monthlyData.work_shifts,
                 blocked_days: monthlyData.blocked_days,
                 blocked_shifts: monthlyData.blocked_shifts,
             });
@@ -65,6 +67,8 @@ export class LowdbWishesAndBlockedRepository implements IWishesAndBlockedReposit
                 ...db.data.employees[index],
                 wish_days: monthlyData.wish_days,
                 wish_shifts: monthlyData.wish_shifts,
+                work_days: monthlyData.work_days,
+                work_shifts: monthlyData.work_shifts,
                 blocked_days: monthlyData.blocked_days,
                 blocked_shifts: monthlyData.blocked_shifts,
             };

@@ -246,9 +246,11 @@ export function GlobalWishesTemplatesPageClient({caseId, monthYear, templates}: 
                                     <div className="p-4 space-y-3">
                                         {viewingTemplate.content.employees.map((employee) => {
                                             const hasWishes =
-                                                employee.wish_days.length > 0 || employee.wish_shifts.length > 0;
+                                                (employee.wish_days?.length ?? 0) > 0 || (employee.wish_shifts?.length ?? 0) > 0;
+                                            const hasWork =
+                                                (employee.work_days?.length ?? 0) > 0 || (employee.work_shifts?.length ?? 0) > 0;
                                             const hasBlocked =
-                                                employee.blocked_days.length > 0 || employee.blocked_shifts.length > 0;
+                                                (employee.blocked_days?.length ?? 0) > 0 || (employee.blocked_shifts?.length ?? 0) > 0;
 
                                             return (
                                                 <div
@@ -263,19 +265,39 @@ export function GlobalWishesTemplatesPageClient({caseId, monthYear, templates}: 
                                                             ID: {employee.key}
                                                         </Badge>
                                                     </div>
-                                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                                                         <div>
                                                             <div className="text-muted-foreground mb-1">Wünsche</div>
                                                             {hasWishes ? (
                                                                 <div className="space-y-1">
-                                                                    {employee.wish_days.length > 0 && (
+                                                                    {(employee.wish_days?.length ?? 0) > 0 && (
                                                                         <div className="text-xs">
-                                                                            Tage: {employee.wish_days.join(', ')}
+                                                                            Tage: {employee.wish_days?.join(', ')}
                                                                         </div>
                                                                     )}
-                                                                    {employee.wish_shifts.length > 0 && (
+                                                                    {(employee.wish_shifts?.length ?? 0) > 0 && (
                                                                         <div className="text-xs">
-                                                                            Schichten: {employee.wish_shifts.length}
+                                                                            Schichten: {employee.wish_shifts?.length ?? 0}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <div
+                                                                    className="text-xs text-muted-foreground">Keine</div>
+                                                            )}
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-muted-foreground mb-1">Arbeitstage</div>
+                                                            {hasWork ? (
+                                                                <div className="space-y-1">
+                                                                    {(employee.work_days?.length ?? 0) > 0 && (
+                                                                        <div className="text-xs">
+                                                                            Tage: {employee.work_days?.join(', ')}
+                                                                        </div>
+                                                                    )}
+                                                                    {(employee.work_shifts?.length ?? 0) > 0 && (
+                                                                        <div className="text-xs">
+                                                                            Schichten: {employee.work_shifts?.length ?? 0}
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -289,14 +311,14 @@ export function GlobalWishesTemplatesPageClient({caseId, monthYear, templates}: 
                                                             </div>
                                                             {hasBlocked ? (
                                                                 <div className="space-y-1">
-                                                                    {employee.blocked_days.length > 0 && (
+                                                                    {(employee.blocked_days?.length ?? 0) > 0 && (
                                                                         <div className="text-xs">
-                                                                            Tage: {employee.blocked_days.join(', ')}
+                                                                            Tage: {employee.blocked_days?.join(', ')}
                                                                         </div>
                                                                     )}
-                                                                    {employee.blocked_shifts.length > 0 && (
+                                                                    {(employee.blocked_shifts?.length ?? 0) > 0 && (
                                                                         <div className="text-xs">
-                                                                            Schichten: {employee.blocked_shifts.length}
+                                                                            Schichten: {employee.blocked_shifts?.length ?? 0}
                                                                         </div>
                                                                     )}
                                                                 </div>

@@ -13,7 +13,14 @@ import {Button} from '@/components/ui/button';
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
 import {Badge} from '@/components/ui/badge';
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
-import {Moon, Save, Save as SaveIcon, Sun, Sunrise, Upload} from 'lucide-react';
+import {
+    Moon,
+    Save,
+    // Save as SaveIcon,
+    Sun,
+    Sunrise,
+    // Upload,
+} from 'lucide-react';
 import {cn} from '@/lib/utils';
 import {
     AlertDialog,
@@ -55,6 +62,7 @@ const weekDays: { key: WeekDay; label: string; isWeekend: boolean }[] = [
 
 const shifts: { key: ShiftType; label: string; icon: React.ReactNode; color: string }[] = [
     {key: 'F', label: 'Frühdienst', icon: <Sunrise className="h-4 w-4"/>, color: 'text-amber-600'},
+    {key: 'Z', label: 'Zwischendienst', icon: <Clock className="h-4 w-4"/>, color: 'text-cyan-600'},
     {key: 'S', label: 'Spätdienst', icon: <Sun className="h-4 w-4"/>, color: 'text-orange-600'},
     {key: 'N', label: 'Nachtdienst', icon: <Moon className="h-4 w-4"/>, color: 'text-blue-600'},
 ];
@@ -175,7 +183,7 @@ export function MinimalStaffEditor({requirements, onSave, isSaving, caseId: case
 
     const getTotalForDay = (category: EmployeeCategory, day: WeekDay) => {
         const dayReqs = localRequirements[category][day];
-        return dayReqs.F + dayReqs.S + dayReqs.N;
+        return dayReqs.F + dayReqs.Z + dayReqs.S + dayReqs.N;
     };
 
     return (
@@ -305,6 +313,7 @@ export function MinimalStaffEditor({requirements, onSave, isSaving, caseId: case
 
             {/* Bottom Toolbar */}
             <div className="flex justify-between gap-2 pt-4 border-t">
+                {/*
                 <div className="flex gap-2">
                     <Button
                         variant="outline"
@@ -325,6 +334,8 @@ export function MinimalStaffEditor({requirements, onSave, isSaving, caseId: case
                         Als Template speichern
                     </Button>
                 </div>
+                */}
+                <div/>
                 <Button onClick={handleSave} disabled={isSaving || !hasChanges} size="lg">
                     <Save className="h-4 w-4 mr-2"/>
                     {isSaving ? 'Speichert...' : hasChanges ? 'Änderungen speichern' : 'Gespeichert'}
