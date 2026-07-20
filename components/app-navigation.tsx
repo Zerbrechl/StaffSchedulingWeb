@@ -9,9 +9,9 @@ import {ScrollArea} from '@/components/ui/scroll-area';
 import {
     Briefcase,
     Calendar,
-    CalendarCheck,
+    // CalendarCheck,
     Cog,
-    FileText,
+    // FileText,
     Heart,
     type LucideIcon,
     Menu,
@@ -45,18 +45,18 @@ const groupedLinks: Array<{
         label: 'Wünsche',
         icon: Heart,
         links: [
-            {href: '/global-wishes-and-blocked', label: 'Globale Wünsche', icon: Heart},
+            // {href: '/global-wishes-and-blocked', label: 'Globale Wünsche', icon: Heart},
             {href: '/wishes-and-blocked', label: 'Wünsche diesen Monat', icon: Heart},
         ],
     },
-    {
-        label: 'Availability',
-        icon: CalendarCheck,
-        links: [
-            {href: '/global-availability', label: 'Global Availability', icon: CalendarCheck},
-            {href: '/availability', label: 'Availability für den Monat', icon: CalendarCheck},
-        ],
-    },
+    // {
+    //     label: 'Availability',
+    //     icon: CalendarCheck,
+    //     links: [
+    //         {href: '/global-availability', label: 'Global Availability', icon: CalendarCheck},
+    //         {href: '/availability', label: 'Availability für den Monat', icon: CalendarCheck},
+    //     ],
+    // },
     {
         label: 'Konfiguration',
         icon: Cog,
@@ -65,17 +65,17 @@ const groupedLinks: Array<{
             {href: '/minimal-staff', label: 'Mindestbesetzung', icon: UserCog},
         ],
     },
-    {
-        label: 'Templates',
-        icon: FileText,
-        links: [
-            {href: '/templates', label: 'Alle Templates', icon: FileText},
-            {href: '/templates/weights', label: 'Gewichtungs-Templates', icon: Scale},
-            {href: '/templates/global-wishes', label: 'Wünsche-Templates', icon: Heart},
-            {href: '/templates/minimal-staff', label: 'Mindestbesetzung-Templates', icon: UserCog},
-            {href: '/templates/availability', label: 'Availability-Templates', icon: CalendarCheck},
-        ],
-    },
+    // {
+    //     label: 'Templates',
+    //     icon: FileText,
+    //     links: [
+    //         {href: '/templates', label: 'Alle Templates', icon: FileText},
+    //         {href: '/templates/weights', label: 'Gewichtungs-Templates', icon: Scale},
+    //         {href: '/templates/global-wishes', label: 'Wünsche-Templates', icon: Heart},
+    //         {href: '/templates/minimal-staff', label: 'Mindestbesetzung-Templates', icon: UserCog},
+    //         {href: '/templates/availability', label: 'Availability-Templates', icon: CalendarCheck},
+    //     ],
+    // },
 ];
 
 interface SidebarContentProps {
