@@ -19,7 +19,6 @@ export interface SolverExecOptions {
     monthYear: string;
     start: string;
     end: string;
-    sharedPoolEnabled?: boolean;
 }
 
 export interface ImportDialogParams {
@@ -262,7 +261,6 @@ export function useSolverOperations({ onAfterOperation, onSolveJobStarted, initi
                 start: opts.start,
                 end: opts.end,
                 timeout,
-                sharedPoolEnabled: opts.sharedPoolEnabled,
             });
             if (!result.success) {
                 toast.error(result.error);

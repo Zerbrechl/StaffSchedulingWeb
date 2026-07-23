@@ -236,7 +236,6 @@ export class SolverApiService implements ISolverService {
                    // start_date: toIsoDate(params.start),
                    // end_date: toIsoDate(params.end),
                    // timeout: solverTimeoutSec,
-                   // shared_pool_enabled: params.sharedPoolEnabled ?? false
                 },
                 httpTimeoutMs
             );

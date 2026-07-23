@@ -33,7 +33,6 @@ export type FetchParams = z.infer<typeof FetchParamsSchema>;
 
 export const SolveParamsSchema = BaseSolverParamsSchema.extend({
     timeout: z.number().optional(),
-    sharedPoolEnabled: z.boolean().optional(),
 });
 
 export type SolveParams = z.infer<typeof SolveParamsSchema>;

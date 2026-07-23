@@ -34,16 +34,14 @@ interface SolverControlPanelProps {
     onSolveJobStarted?: (job: SolverJob) => void | Promise<void>;
     initialLastInsertedSolution?: import('@/src/entities/models/schedule.model').ScheduleSolutionRaw | null;
     initialPendingInsertSolution?: import('@/src/entities/models/schedule.model').ScheduleSolutionRaw | null;
-    isLocked?: boolean;
 }
 
-export function SolverControlPanel({caseId, selectedCaseIds = [], monthYear, onAfterOperation, onSolveJobStarted, initialLastInsertedSolution, initialPendingInsertSolution, isLocked}: SolverControlPanelProps) {
+export function SolverControlPanel({caseId, selectedCaseIds = [], monthYear, onAfterOperation, onSolveJobStarted, initialLastInsertedSolution, initialPendingInsertSolution}: SolverControlPanelProps) {
     const searchParams = useSearchParams();
     const pathname = usePathname();
     const router = useRouter();
     const [command, setCommand] = useState<SolverCommandType>('solve');
     const [solveTimeout, setSolveTimeout] = useState('300');
-    const [enableSharedPool, setEnableSharedPool] = useState(false);
 
     const [showDeleteMissingDialog, setShowDeleteMissingDialog] = useState(false);
     const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
@@ -125,7 +123,6 @@ export function SolverControlPanel({caseId, selectedCaseIds = [], monthYear, onA
             monthYear,
             start,
             end,
-            sharedPoolEnabled: enableSharedPool,
         };
     };
 
@@ -336,39 +333,6 @@ export function SolverControlPanel({caseId, selectedCaseIds = [], monthYear, onA
                     </div>
 
                 */}
-                {/* Command-specific parameters */}
-                {command === 'solve' && (
-                    <div className="flex items-center justify-between rounded-md border p-3">
-                        <div className="space-y-0.5">
-                            <Label htmlFor="shared-pool">
-                                Enable Shared Pool
-                            </Label>
-
-                            <p className="text-sm text-muted-foreground">
-                                Sendet dem Solver, ob ausgewählte Cases als gemeinsamer Pool behandelt werden sollen.
-                            </p>
-                        </div>
-
-                        <button
-                            id="shared-pool"
-                            type="button"
-                            disabled={isExecuting || isLocked}
-                            onClick={() => setEnableSharedPool(prev => !prev)}
-                            className={`
-                relative inline-flex h-6 w-11 items-center rounded-full transition
-                ${enableSharedPool ? 'bg-primary' : 'bg-muted'}
-                ${isExecuting || isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-            `}
-                        >
-            <span
-                className={`
-                    inline-block h-5 w-5 transform rounded-full bg-background shadow transition
-                    ${enableSharedPool ? 'translate-x-5' : 'translate-x-1'}
-                `}
-            />
-                        </button>
-                    </div>
-                )}
                 {(command === 'solve' || command === 'solve-multiple') && (
                     <div className="space-y-2">
                         <Label htmlFor="timeout">Timeout (Sekunden)</Label>

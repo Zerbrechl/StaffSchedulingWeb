@@ -185,7 +185,6 @@ export function SolverPageClient({
                         onSolveJobStarted={addJob}
                         initialLastInsertedSolution={initialLastInsertedSolution}
                         initialPendingInsertSolution={initialPendingInsertSolution}
-                        isLocked={isLocked}
                     />
 
                     <div className="space-y-6">
