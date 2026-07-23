@@ -137,7 +137,7 @@ export function SolverPageClient({
 
     useEffect(() => {
         if (jobs.length === 0) return;
-        const intervalId = setInterval(refreshJobs, 10_000);
+        const intervalId = setInterval(refreshJobs, 60_000);
         return () => clearInterval(intervalId);
     }, [jobs.length, refreshJobs]);
 
