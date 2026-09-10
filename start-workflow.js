@@ -14,12 +14,12 @@ if (args.length < 3) {
     process.exit(1);
 }
 
-const startDate = args[0];
-const endDate = args[1];
+const [day, month, year] = args[0].split('.').map(Number);
+const startDate = `${month.toString().padStart(2, "0")}_${year}`;
 const caseId = args[2];
 
 // Build the workflow start URL.
-const url = `http://localhost:3000/api/workflow/start?caseId=${caseId}&start=${startDate}&end=${endDate}`;
+const url = `http://localhost:3000/solver?caseId=${caseId}&monthYear=${startDate}`;
 
 // Use the correct npm executable for the current platform.
 const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
