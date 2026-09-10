@@ -83,7 +83,7 @@ async function ensurePrerequisites() {
         // The server is not running yet, so start it first.
         console.log('Server läuft noch nicht. Starte Next.js...');
 
-        const nextProcess = spawn(npmCmd, ['run', 'start'], {
+        const nextProcess = spawn(npmCmd, ['run', 'dev'], {
             stdio: 'inherit',
             shell: true
         });
