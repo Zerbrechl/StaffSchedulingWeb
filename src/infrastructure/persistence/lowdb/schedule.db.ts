@@ -78,6 +78,26 @@ export async function getScheduleDb(caseId: number, monthYear: string, scheduleI
     return db;
 }
 
+/** Writes one saved schedule to TimeOffice through the scheduling backend. */
+export async function writeScheduleToTimeOfficeDb(
+    caseId: number,
+    monthYear: string,
+    solution: ScheduleSolutionRaw,
+): Promise<void> {
+    const url = getScheduleApiUrl(caseId, monthYear, '/schedules/write-to-timeoffice');
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({data: solution}),
+        cache: 'no-store',
+    });
+
+    if (!response.ok) {
+        const message = await response.text().catch(() => '');
+        throw new Error(message || `Dienstplan konnte nicht in TimeOffice gespeichert werden (${response.status}).`);
+    }
+}
+
 /**
  * Deletes a specific schedule file.
  *

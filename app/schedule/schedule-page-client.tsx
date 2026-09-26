@@ -18,6 +18,7 @@ import {
     saveScheduleAction,
     selectScheduleAction,
     updateScheduleMetadataAction,
+    writeScheduleToTimeOfficeAction,
 } from '@/features/schedule/schedule.actions';
 import {SchedulesMetadata, ScheduleSolution, ScheduleSolutionRaw} from '@/src/entities/models/schedule.model';
 import {parseSolutionFile} from '@/lib/services/schedule-parser';
@@ -115,6 +116,13 @@ export function SchedulePageClient({caseId, monthYear, initialSchedule, initialM
         router.refresh();
     };
 
+    const handleScheduleWrite = async (scheduleId: string) => {
+        const result = await writeScheduleToTimeOfficeAction(caseId, monthYear, scheduleId);
+        if (!result.success) {
+            throw new Error(result.error || 'Dienstplan konnte nicht in TimeOffice gespeichert werden.');
+        }
+    };
+
     const handleDescriptionUpdate = async (scheduleId: string, description: string) => {
         const result = await updateScheduleMetadataAction(caseId, monthYear, scheduleId, {description});
         if (!result.success) {
@@ -187,6 +195,7 @@ export function SchedulePageClient({caseId, monthYear, initialSchedule, initialM
                             schedulesMetadata={schedulesMetadata}
                             onScheduleSelect={handleScheduleSelect}
                             onScheduleDelete={handleScheduleDelete}
+                            onScheduleSave={handleScheduleWrite}
                             compareMode={compareMode}
                             selectedScheduleIds={selectedScheduleIds}
                             onMultipleSchedulesSelect={handleMultipleSchedulesSelect}

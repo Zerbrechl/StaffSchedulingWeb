@@ -4,6 +4,7 @@ import {revalidatePath} from 'next/cache';
 import {getInjection} from '@/di/container';
 import type {SchedulesMetadata, ScheduleSolutionRaw} from '@/src/entities/models/schedule.model';
 import type {ActionResult} from '@/src/entities/models/action-result.model';
+import {writeScheduleToTimeOfficeDb} from '@/src/infrastructure/persistence/lowdb/schedule.db';
 
 export async function getSchedulesMetadataAction(caseId: number, monthYear: string): Promise<SchedulesMetadata> {
     const controller = getInjection('IGetSchedulesMetadataController');
@@ -44,6 +45,28 @@ export async function getScheduleByIdAction(caseId: number, monthYear: string, s
         description: scheduleMetadata?.description,
         generatedAt: scheduleMetadata?.generatedAt,
     };
+}
+
+export async function writeScheduleToTimeOfficeAction(
+    caseId: number,
+    monthYear: string,
+    scheduleId: string,
+): Promise<ActionResult> {
+    try {
+        const controller = getInjection('IGetScheduleController');
+        const result = await controller({caseId, monthYear, scheduleId});
+
+        if ('error' in result) return {success: false, error: result.error};
+        if (!result.data) return {success: false, error: 'Dienstplan wurde nicht gefunden.'};
+
+        await writeScheduleToTimeOfficeDb(caseId, monthYear, result.data);
+        return {success: true, data: undefined};
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Dienstplan konnte nicht gespeichert werden.',
+        };
+    }
 }
 
 export async function saveScheduleAction(

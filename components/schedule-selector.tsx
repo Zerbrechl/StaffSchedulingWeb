@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import {Badge} from "@/components/ui/badge";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import {Calendar, Check, CheckCircle, Loader2, Pencil, Trash2} from "lucide-react";
+import {Calendar, Check, CheckCircle, Loader2, Pencil, Save, Trash2} from "lucide-react";
 import {toast} from "sonner";
 import {Checkbox} from "@/components/ui/checkbox";
 import {Textarea} from "@/components/ui/textarea";
@@ -23,6 +23,7 @@ interface ScheduleSelectorProps {
     schedulesMetadata: SchedulesMetadata;
     onScheduleSelect: (scheduleId: string) => Promise<void>;
     onScheduleDelete: (scheduleId: string) => Promise<void>;
+    onScheduleSave: (scheduleId: string) => Promise<void>;
     onRefresh?: () => Promise<void>;
     selectedScheduleIds?: string[];
     onMultipleSchedulesSelect?: (scheduleIds: string[]) => void;
@@ -34,6 +35,7 @@ export function ScheduleSelector({
                                      schedulesMetadata,
                                      onScheduleSelect,
                                      onScheduleDelete,
+                                     onScheduleSave,
                                      onRefresh,
                                      selectedScheduleIds = [],
                                      onMultipleSchedulesSelect,
@@ -43,6 +45,7 @@ export function ScheduleSelector({
     const [isLoading, setIsLoading] = useState(false);
     const [editingDescriptionId, setEditingDescriptionId] = useState<string | null>(null);
     const [editingDescription, setEditingDescription] = useState<string>("");
+    const [savingScheduleId, setSavingScheduleId] = useState<string | null>(null);
 
     const handleSelect = async (scheduleId: string) => {
         try {
@@ -73,6 +76,19 @@ export function ScheduleSelector({
             console.error(error);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleSave = async (scheduleId: string) => {
+        try {
+            setSavingScheduleId(scheduleId);
+            await onScheduleSave(scheduleId);
+            toast.success("Dienstplan wurde in TimeOffice gespeichert");
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Fehler beim Speichern in TimeOffice");
+            console.error(error);
+        } finally {
+            setSavingScheduleId(null);
         }
     };
 
@@ -206,7 +222,7 @@ export function ScheduleSelector({
                         {compareMode ? "Vergleich verwalten" : `Alle Dienstpläne (${schedulesMetadata.schedules.length})`}
                     </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-4xl">
                     <DialogHeader>
                         <DialogTitle>{compareMode ? "Dienstpläne zum Vergleich auswählen" : "Alle Dienstpläne"}</DialogTitle>
                         <DialogDescription>
@@ -232,7 +248,7 @@ export function ScheduleSelector({
                                     }
                                 >
                                     <CardHeader>
-                                        <div className="flex items-start justify-between">
+                                        <div className="space-y-4">
                                             <div className="flex items-start gap-3 flex-1">
                                                 {compareMode && (
                                                     <Checkbox
@@ -325,7 +341,20 @@ export function ScheduleSelector({
                                                 </div>
                                             </div>
                                             {!compareMode && (
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex flex-wrap items-center justify-end gap-2 border-t pt-4">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleSave(schedule.scheduleId)}
+                                                        disabled={isLoading || savingScheduleId !== null}
+                                                    >
+                                                        {savingScheduleId === schedule.scheduleId ? (
+                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                                                        ) : (
+                                                            <Save className="mr-2 h-4 w-4"/>
+                                                        )}
+                                                        In TimeOffice speichern
+                                                    </Button>
                                                     <Button
                                                         size="sm"
                                                         variant={schedule.isSelected ? "outline" : "default"}
