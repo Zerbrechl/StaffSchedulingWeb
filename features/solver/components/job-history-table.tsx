@@ -12,6 +12,11 @@ import {de} from 'date-fns/locale';
 
 function JobRow({job, onRefreshJob}: { job: SolverJob; onRefreshJob?: (job: SolverJob) => Promise<void> | void }) {
     const [expanded, setExpanded] = useState(false);
+    const isInfeasible =
+        (job.type === 'solve' || job.type === 'solve-multiple') &&
+        (job.status === 'completed' || job.status === 'succeeded') &&
+        typeof job.result === 'object' && job.result !== null &&
+        'status' in job.result && job.result.status === 'infeasible';
 
     const getCommandLabel = (type: string) => {
         const labels: Record<string, string> = {
@@ -39,7 +44,7 @@ function JobRow({job, onRefreshJob}: { job: SolverJob; onRefreshJob?: (job: Solv
             );
         }
 
-        if (job.status === 'completed' || job.status === 'succeeded') {
+        if ((job.status === 'completed' || job.status === 'succeeded') && !isInfeasible) {
             return job.type === 'solve-multiple' && job.metadata?.solutionsGenerated !== undefined && job.metadata?.expectedSolutions !== undefined ? (
                 job.metadata.solutionsGenerated < job.metadata.expectedSolutions ? (
                     <Badge variant="default"
@@ -77,7 +82,12 @@ function JobRow({job, onRefreshJob}: { job: SolverJob; onRefreshJob?: (job: Solv
                 <TableCell className="font-medium">
                     {getCommandLabel(job.type)}
                 </TableCell>
-                <TableCell>{renderStatus()}</TableCell>
+                <TableCell>
+                    {renderStatus()}
+                    {isInfeasible && (
+                        <p className="mt-1 text-xs text-muted-foreground">Keine zulässige Lösung</p>
+                    )}
+                </TableCell>
                 <TableCell>
                     {format(new Date(job.createdAt), 'dd.MM.yyyy HH:mm', {locale: de})}
                 </TableCell>
@@ -92,6 +102,14 @@ function JobRow({job, onRefreshJob}: { job: SolverJob; onRefreshJob?: (job: Solv
                 <TableRow>
                     <TableCell colSpan={5} className="bg-muted/30">
                         <div className="p-4 space-y-3">
+                            {isInfeasible && (
+                                <div>
+                                    <p className="text-sm font-medium mb-1">Solver-Ergebnis:</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        Der Solver wurde erfolgreich ausgeführt, hat aber keine zulässige Lösung gefunden (infeasible).
+                                    </p>
+                                </div>
+                            )}
                             <div>
                                 <p className="text-sm font-medium mb-1">Parameter:</p>
                                 <pre
