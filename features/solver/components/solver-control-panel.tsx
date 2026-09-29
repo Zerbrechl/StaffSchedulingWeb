@@ -41,7 +41,7 @@ export function SolverControlPanel({caseId, selectedCaseIds = [], monthYear, onA
     const pathname = usePathname();
     const router = useRouter();
     const [command, setCommand] = useState<SolverCommandType>('solve');
-    const [solveTimeout, setSolveTimeout] = useState('300');
+    const [solveTimeout, setSolveTimeout] = useState('60');
 
     const [showDeleteMissingDialog, setShowDeleteMissingDialog] = useState(false);
     const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
@@ -231,18 +231,21 @@ export function SolverControlPanel({caseId, selectedCaseIds = [], monthYear, onA
                             <SelectValue/>
                         </SelectTrigger>
                         <SelectContent>
+                            {/* Restore when POST /fetch is registered in the backend.
                             <SelectItem value="fetch">
                                 <div className="flex items-center gap-2">
                                     <Database className="h-4 w-4"/>
                                     <span>Daten abrufen (fetch)</span>
                                 </div>
                             </SelectItem>
+                            */}
                             <SelectItem value="solve">
                                 <div className="flex items-center gap-2">
                                     <Play className="h-4 w-4"/>
                                     <span>Lösen (solve)</span>
                                 </div>
                             </SelectItem>
+                            {/* Restore when POST /solve-multiple, /insert and /delete are registered.
                             <SelectItem value="solve-multiple">
                                 <div className="flex items-center gap-2">
                                     <Play className="h-4 w-4"/>
@@ -261,6 +264,7 @@ export function SolverControlPanel({caseId, selectedCaseIds = [], monthYear, onA
                                     <span>Löschen (delete)</span>
                                 </div>
                             </SelectItem>
+                            */}
                         </SelectContent>
                     </Select>
                     <p className="text-sm text-muted-foreground">{getCommandDescription(command)}</p>
