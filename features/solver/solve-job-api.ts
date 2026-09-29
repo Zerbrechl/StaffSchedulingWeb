@@ -71,6 +71,7 @@ export async function startBackendSolveJob(
             planning_unit_ids: getPlanningUnitIds(params),
             year,
             month,
+            timeout: params.timeout,
         }),
         cache: 'no-store',
     });
