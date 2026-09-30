@@ -55,6 +55,7 @@ Core capabilities:
 
 4. Open [http://localhost:3000](http://localhost:3000)
 
+<!--
 ## Data Layout (Simplified)
 
 ```
@@ -66,6 +67,7 @@ cases/
     ├── schedule_[timestamp].json
     └── schedules.json
 ```
+-->
 
 ## New Functionalities and Features
 
