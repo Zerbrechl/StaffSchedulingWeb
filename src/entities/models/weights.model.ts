@@ -96,7 +96,7 @@ export const WEIGHT_METADATA: WeightMetadata[] = [
 export const DEFAULT_WEIGHTS: Weights = {
     free_weekend: 2,
     consecutive_nights: 2,
-    hidden: 100,
+    hidden: 0,
     overtime: 4,
     consecutive_days: 1,
     rotate: 1,
