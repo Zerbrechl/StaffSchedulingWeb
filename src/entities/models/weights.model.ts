@@ -49,11 +49,13 @@ export const WEIGHT_METADATA: WeightMetadata[] = [
         label: 'Aufeinanderfolgende Nachtschichten',
         description: 'Aufeinanderfolgende Nachtschichten minimieren',
     },
+    /* Hidden employees are no longer used. Keep this entry for later restoration.
     {
         key: 'hidden',
         label: 'Versteckte Mitarbeiter',
         description: 'Sicherstellen, dass alle qualifizierten Mitarbeiter eingeplant werden',
     },
+    */
     {
         key: 'overtime',
         label: 'Überstunden',
