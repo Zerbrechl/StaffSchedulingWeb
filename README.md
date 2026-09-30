@@ -67,6 +67,34 @@ cases/
     └── schedules.json
 ```
 
+## New Functionalities and Features
+
+- **Multiple-station planning:** Select a month and several stations together. Employee, wishes,
+  weights, and minimum-staffing views support multiple selected cases. Solving submits all selected
+  station IDs in one request for joint planning in the backend.
+- **Backend API integration:** Available stations are loaded from `/solve/options`. Most data adapters
+  now read and write through the Python API instead of the local case files described above.
+  The backend address defaults to `http://127.0.0.1:8000` and can be configured with `SOLVER_API_URL`.
+- **Asynchronous solve jobs:** Starting a solve returns a job ID immediately. The frontend checks its
+  status every 10 seconds and keeps the latest 10 jobs per month and station selection in browser
+  storage. The timeout can be set before starting a job; its current frontend default is 60 seconds.
+- **Infeasible-result feedback:** A job that finishes without a feasible solution shows
+  **Fehlgeschlagen — Keine zulässige Lösung**. Expanding the row explains the result separately from
+  an execution error.
+- **Extended wishes and staffing:** Wishes now include preferred working days and shifts in addition
+  to time off and blocked periods. Minimum staffing also supports **Zwischendienst (Z)** alongside
+  Frühdienst, Spätdienst, and Nachtdienst.
+- **Schedule comparison and saving:** Comparison selection and its empty state have been improved.
+  Each schedule in **Alle Dienstpläne** has an **In TimeOffice speichern** button that sends the full
+  plan to `/schedules/write-to-timeoffice`. This requires the backend POST endpoint, which is not
+  registered in the currently integrated backend.
+- **Availability tools:** Monthly and weekly availability/unavailability can be entered and weekly
+  settings converted to a month. These screens remain in the code, but their navigation links are
+  currently hidden together with global wishes and templates.
+- **Reduced solver UI:** The Solver dropdown currently offers only **Lösen (solve)**. Unused fetch,
+  solve-multiple, insert, and delete options are commented out for later restoration. The unused
+  **Versteckte Mitarbeiter** weight is also commented out in the display metadata.
+
 ## Documentation
 
 This README intentionally stays concise. For full documentation and detailed workflows, see:
